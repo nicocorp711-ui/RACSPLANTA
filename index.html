@@ -1133,6 +1133,14 @@ function escapeHtml(s){
 }
 
 /* ───── MODAL DETALLE ───── */
+// Normaliza fotos: acepta array, string "url1 | url2", o vacío → siempre devuelve array limpio
+function toArray(val){
+  if(!val) return [];
+  if(Array.isArray(val)) return val.filter(v=>v&&String(v).trim()&&!String(v).startsWith('data:')||String(v).startsWith('data:'));
+  if(typeof val==='string') return val.split('|').map(s=>s.trim()).filter(Boolean);
+  return [];
+}
+
 function openModal(id){
   const r=getReportes().find(x=>x.id===id);
   if(!r) return;
@@ -1143,8 +1151,8 @@ function openModal(id){
   const row=(label,val,full)=>val?`<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value"${full?' style="text-align:left;flex:1;margin-left:16px;"':''}>${val}</span></div>`:'';
   const sec=t=>`<div class="detail-section">${t}</div>`;
 
-  const fotosHallazgo=r.fotos&&r.fotos.length?r.fotos:(r.linksFotos||[]);
-  const fotosLev=r.fotosLevantamiento&&r.fotosLevantamiento.length?r.fotosLevantamiento:(r.linksFotosLevantamiento||[]);
+  const fotosHallazgo=toArray(r.fotos).length?toArray(r.fotos):toArray(r.linksFotos);
+  const fotosLev=toArray(r.fotosLevantamiento).length?toArray(r.fotosLevantamiento):toArray(r.linksFotosLevantamiento);
 
   document.getElementById('modalContent').innerHTML=`
     <div class="modal-title">${escapeHtml(r.tipo)}</div>
@@ -1276,7 +1284,7 @@ function guardarEdicion(){
   // Si va a cerrado, validar foto y medidas
   if(nuevoEstado==='Cerrado'){
     const tieneNuevaFoto=editPhotoLevDataURLs.length>0;
-    const tieneFotoVieja=(r.fotosLevantamiento&&r.fotosLevantamiento.length)||(r.linksFotosLevantamiento&&r.linksFotosLevantamiento.length);
+    const tieneFotoVieja=toArray(r.fotosLevantamiento).length||toArray(r.linksFotosLevantamiento).length;
     if(!tieneNuevaFoto && !tieneFotoVieja){
       showToast('⚠ Agrega al menos una fotos de cierre');
       return;
