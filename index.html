@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Sistema de reportes de seguridad - Actos y Condiciones">
+<title>Reportes de Seguridad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#f0f4f8;--surface:#ffffff;--surface2:#e8edf2;--surface3:#dde3ea;
+    --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);
+    --text:#1a2636;--text2:#4a6080;--text3:#8a9bb0;
+    --accent:#1a6fd4;--accent-dim:rgba(26,111,212,0.12);
+    --danger:#d63b3b;--danger-dim:rgba(214,59,59,0.1);
+    --warning:#d4820a;--warning-dim:rgba(212,130,10,0.1);
+    --success:#1a9e5c;--success-dim:rgba(26,158,92,0.1);
+    --purple:#7c3fc7;--purple-dim:rgba(124,63,199,0.1);
+    --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+    --radius:12px;--radius-sm:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5;min-height:100vh;overscroll-behavior:none;}
+
+  .app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .app-title{font-size:16px;font-weight:600;letter-spacing:-0.3px;}
+  .app-title span{color:var(--accent);}
+  .sync-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-family:var(--mono);color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;cursor:pointer;transition:all 0.2s;}
+  .sync-badge:active{transform:scale(0.95);}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);}
+  .sync-dot.online{background:var(--success);}
+  .sync-dot.syncing{background:var(--warning);animation:pulse 1s infinite;}
+  .sync-dot.pending{background:var(--warning);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  .tabs{background:var(--surface);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:56px;z-index:99;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{flex:1;min-width:80px;padding:12px 8px;text-align:center;font-size:12px;font-weight:500;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab-badge{display:inline-block;background:var(--danger);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:4px;font-family:var(--mono);}
+
+  .content{padding:16px;max-width:600px;margin:0 auto;}
+  .form-section{margin-bottom:20px;}
+  .form-label{display:block;font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+  .form-sublabel{display:block;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}
+  .form-required{color:var(--danger);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .chip-group{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{padding:7px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer;transition:all 0.15s;user-select:none;}
+  .chip:active{transform:scale(0.95);}
+  .chip.sel-act   {background:var(--danger-dim);  border-color:var(--danger);  color:var(--danger);  font-weight:500;}
+  .chip.sel-cond  {background:var(--warning-dim); border-color:var(--warning); color:var(--warning); font-weight:500;}
+  .chip.sel-near  {background:var(--purple-dim);  border-color:var(--purple);  color:var(--purple);  font-weight:500;}
+  .chip.sel-both  {background:var(--accent-dim);  border-color:var(--accent);  color:var(--accent);  font-weight:500;}
+  .chip.sel-bajo  {background:var(--success-dim); border-color:var(--success); color:var(--success); font-weight:500;}
+  .chip.sel-medio {background:var(--warning-dim); border-color:var(--warning); color:var(--warning); font-weight:500;}
+  .chip.sel-alto  {background:var(--danger-dim);  border-color:var(--danger);  color:var(--danger);  font-weight:500;}
+  .chip.sel-critico{background:var(--purple-dim); border-color:var(--purple);  color:var(--purple);  font-weight:500;}
+  .chip.sel-abierto{background:var(--danger-dim); border-color:var(--danger); color:var(--danger); font-weight:500;}
+  .chip.sel-cerrado{background:var(--success-dim);border-color:var(--success);color:var(--success);font-weight:500;}
+
+  input[type="text"],input[type="date"],input[type="time"],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--sans);font-size:15px;padding:10px 14px;transition:border-color 0.2s;-webkit-appearance:none;}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);}
+  input[readonly]{background:var(--surface3);color:var(--text2);cursor:default;}
+  textarea{resize:none;min-height:90px;}
+  select option{background:var(--surface);color:var(--text);}
+
+  .photo-area{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+  .photo-area:active{background:var(--surface2);}
+  .photo-area input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .photo-icon{width:40px;height:40px;background:var(--surface3);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:20px;}
+  .photos-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .photo-thumb{width:72px;height:72px;border-radius:var(--radius-sm);object-fit:cover;border:1px solid var(--border);display:block;}
+  .photo-thumb-wrap{position:relative;width:72px;height:72px;flex-shrink:0;}
+  .photo-remove{position:absolute;top:2px;right:2px;width:20px;height:20px;background:rgba(200,0,0,0.85);border:none;border-radius:50%;color:white;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+
+  .btn-submit{width:100%;padding:14px;background:var(--accent);color:white;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:8px;}
+  .btn-submit:active{transform:scale(0.98);opacity:0.9;}
+  .btn-submit:disabled{background:var(--text3);cursor:not-allowed;}
+
+  .report-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;cursor:pointer;transition:border-color 0.2s;}
+  .report-card:active{border-color:var(--border2);}
+  .report-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .report-type-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;}
+  .badge-act  {background:var(--danger-dim);  color:var(--danger);}
+  .badge-cond {background:var(--warning-dim); color:var(--warning);}
+  .badge-near {background:var(--purple-dim);  color:var(--purple);}
+  .badge-both {background:var(--accent-dim);  color:var(--accent);}
+  .estado-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:4px;}
+  .estado-abierto{background:var(--danger-dim);color:var(--danger);}
+  .estado-cerrado{background:var(--success-dim);color:var(--success);}
+  .estado-dot{width:5px;height:5px;border-radius:50%;}
+  .estado-abierto .estado-dot{background:var(--danger);}
+  .estado-cerrado .estado-dot{background:var(--success);}
+  .risk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+  .risk-critico{background:var(--purple);}
+  .risk-alto   {background:var(--danger);}
+  .risk-medio  {background:var(--warning);}
+  .risk-bajo   {background:var(--success);}
+  .report-title{font-size:14px;font-weight:500;flex:1;line-height:1.4;}
+  .report-meta{display:flex;gap:12px;font-size:12px;color:var(--text3);font-family:var(--mono);flex-wrap:wrap;}
+  .sync-status{display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);margin-top:8px;}
+  .sync-status .dot{width:6px;height:6px;border-radius:50%;}
+  .status-synced{color:var(--success);}
+  .status-synced .dot{background:var(--success);}
+  .status-pending{color:var(--warning);}
+  .status-pending .dot{background:var(--warning);}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
+  .empty-icon{font-size:48px;margin-bottom:16px;opacity:0.4;}
+  .empty-state h3{font-size:16px;font-weight:500;color:var(--text2);margin-bottom:8px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(4px);}
+  .modal-overlay.open{display:flex;}
+  .modal-sheet{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-height:90vh;overflow-y:auto;padding:20px 16px 32px;border-top:1px solid var(--border2);animation:slideUp 0.3s ease;}
+  @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 20px;}
+  .modal-title{font-size:18px;font-weight:600;margin-bottom:16px;}
+  .detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);gap:16px;}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-label{font-size:12px;color:var(--text3);flex-shrink:0;max-width:45%;}
+  .detail-value{font-size:13px;text-align:right;}
+  .detail-section{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text2);padding:12px 0 4px;}
+
+  .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;}
+  .stat-num{font-size:28px;font-weight:600;font-family:var(--mono);margin-bottom:4px;}
+  .stat-label{font-size:12px;color:var(--text2);}
+  .section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:14px;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:24px;font-size:13px;z-index:999;transition:transform 0.3s ease;white-space:nowrap;pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .banner{padding:10px 16px;font-size:13px;display:flex;align-items:center;gap:8px;display:none;}
+  .banner.show{display:flex;}
+  .banner-offline{background:var(--danger-dim);color:var(--danger);border-bottom:1px solid rgba(247,79,79,0.2);}
+  .banner-sync{background:var(--success-dim);color:var(--success);border-bottom:1px solid rgba(79,217,142,0.2);}
+  .divider{height:1px;background:var(--border);margin:4px 0 20px;}
+  .btn-delete{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(247,79,79,0.3);border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;cursor:pointer;font-family:var(--sans);}
+  .btn-edit{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;cursor:pointer;font-family:var(--sans);font-weight:500;}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;cursor:pointer;font-family:var(--sans);}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
+  .btn-close-modal{flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:var(--sans);font-size:14px;cursor:pointer;}
+  .photos-modal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;}
+  .photos-modal-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--radius-sm);}
+
+  /* Seguimientos */
+  .seg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+  .seg-header h2{font-size:16px;font-weight:600;}
+  .seg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+  .seg-person{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+  .seg-name{font-size:14px;font-weight:600;}
+  .seg-info{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono);}
+  .seg-count{font-size:22px;font-weight:600;font-family:var(--mono);color:var(--danger);text-align:right;line-height:1;}
+  .seg-count-lbl{font-size:10px;color:var(--text3);text-align:right;}
+  .seg-pendientes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .seg-pendiente-chip{font-size:11px;background:var(--danger-dim);color:var(--danger);padding:3px 8px;border-radius:10px;font-weight:500;}
+  .btn-download{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 16px;font-size:13px;cursor:pointer;font-family:var(--sans);font-weight:500;display:flex;align-items:center;gap:6px;}
+  .btn-download:active{transform:scale(0.97);}
+
+  /* Edit modal extras */
+  .edit-info-card{background:var(--surface2);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6;}
+  .edit-info-card strong{color:var(--text);font-weight:500;}
+
+  /* DNI lookup feedback */
+  .dni-status{font-size:11px;font-family:var(--mono);margin-top:4px;display:none;}
+  .dni-status.found{color:var(--success);display:block;}
+  .dni-status.notfound{color:var(--warning);display:block;}
+</style>
+</head>
+<body>
+
+<div class="banner banner-offline" id="offlineBanner"><span>⚠</span> Sin conexión — los reportes se guardarán localmente</div>
+<div class="banner banner-sync"    id="syncBanner"><span>↑</span> Sincronizando reportes pendientes...</div>
+
+<header class="app-header">
+  <div class="app-title">Planta de <span>Beneficio</span></div>
+  <button class="sync-badge" onclick="manualSync()">
+    <span class="sync-dot" id="syncDot"></span>
+    <span id="syncLabel">offline</span>
+  </button>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('nuevo')">＋ Nuevo</button>
+  <button class="tab" onclick="showTab('reportes')">Reportes</button>
+  <button class="tab" onclick="showTab('seguimientos')">Seguimientos<span class="tab-badge" id="segBadge" style="display:none">0</span></button>
+  <button class="tab" onclick="showTab('stats')">Estadísticas</button>
+</div>
+
+<!-- TAB: NUEVO REPORTE -->
+<div class="content" id="tab-nuevo">
+
+  <div class="form-section">
+    <label class="form-label">Estado del reporte <span class="form-required">*</span></label>
+    <div class="chip-group" id="estado-chips">
+      <div class="chip sel-abierto" data-value="Abierto" onclick="selectEstado(this)">● Abierto</div>
+      <div class="chip" data-value="Cerrado" onclick="selectEstado(this)">● Cerrado</div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px;">Si registra como <strong>Cerrado</strong>, debe agregar fotos de cierre y descripción de las acciones realizadas.</div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Tipo <span class="form-required">*</span></label>
+    <div class="chip-group" id="tipo-chips">
+      <div class="chip" data-value="Acto Subestándar"      onclick="selectTipo(this)">Acto Subestándar</div>
+      <div class="chip" data-value="Condición Subestándar" onclick="selectTipo(this)">Condición Subestándar</div>
+      <div class="chip" data-value="Casi Accidente"        onclick="selectTipo(this)">Casi Accidente</div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Nivel de Riesgo <span class="form-required">*</span></label>
+    <div class="chip-group" id="riesgo-chips">
+      <div class="chip" data-value="Bajo"    onclick="selectRiesgo(this)">● Bajo</div>
+      <div class="chip" data-value="Medio"   onclick="selectRiesgo(this)">● Medio</div>
+      <div class="chip" data-value="Alto"    onclick="selectRiesgo(this)">● Alto</div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Categoría <span class="form-required">*</span></label>
+    <select id="categoria" onchange="toggleCategoriaOtro()">
+      <option value="">— Seleccionar —</option>
+      <optgroup label="─── Caídas y Golpes ───">
+        <option>Caída al mismo nivel</option>
+        <option>Caída a distinto nivel</option>
+        <option>Golpe con objeto o equipo</option>
+        <option>Atrapamiento en maquinaria</option>
+        <option>Caída de objetos</option>
+      </optgroup>
+      <optgroup label="─── Contacto con Sustancias ───">
+        <option>Contacto con cianuro</option>
+        <option>Contacto con ácidos o reactivos</option>
+        <option>Derrame de sustancias peligrosas</option>
+        <option>Exposición a gases tóxicos</option>
+        <option>Ingestión accidental de químicos</option>
+      </optgroup>
+      <optgroup label="─── Exposición a Agentes Físicos ───">
+        <option>Exposición a ruido excesivo</option>
+        <option>Exposición a polvo / Sílice</option>
+        <option>Exposición a calor</option>
+        <option>Exposición a vibraciones</option>
+        <option>Falta de iluminación</option>
+      </optgroup>
+      <optgroup label="─── Energía y Equipos ───">
+        <option>Contacto eléctrico</option>
+        <option>Atrapamiento en faja transportadora</option>
+        <option>Atrapamiento en molino o chancadora</option>
+        <option>Golpe por equipo en movimiento</option>
+        <option>Falla de bloqueo LOTO</option>
+        <option>Falta de guardas</option>
+        <option>Equipos y máquinas en mal estado</option>
+      </optgroup>
+      <optgroup label="─── Incendio y Explosión ───">
+        <option>Amago de incendio</option>
+        <option>Herramientas hechizas</option>
+        <option>Fuga de gas inflamable</option>
+      </optgroup>
+      <optgroup label="─── Ergonómico y Fatiga ───">
+        <option>Sobreesfuerzo / Esfuerzo excesivo</option>
+        <option>Postura forzada</option>
+        <option>Fatiga o somnolencia</option>
+      </optgroup>
+      <optgroup label="─── Condiciones del Lugar ───">
+        <option>Piso resbaladizo o irregular</option>
+        <option>Falta de señalización</option>
+        <option>Falta de orden y limpieza</option>
+        <option>Estructura o andamio inseguro</option>
+        <option>Falta de barandas</option>
+        <option>Fuga de pulpa por tubería</option>
+        <option>Estructuras oxidadas</option>
+      </optgroup>
+      <optgroup label="─── Conducta y Procedimiento ───">
+        <option>Incumplimiento de procedimiento</option>
+        <option>Uso incorrecto de EPP</option>
+        <option>No usar EPP</option>
+        <option>Trabajo sin permiso PETAR</option>
+        <option>No llenar IPERC-PETAR</option>
+        <option>Conducir sin autorización</option>
+        <option>No contar con andamios para trabajo en altura</option>
+        <option>Trasladar personas en cabina de máquinas</option>
+        <option>Pasar por área señalizada o restringida</option>
+      </optgroup>
+      <option value="Otro">Otro</option>
+    </select>
+    <div id="categoriaOtroWrap" style="display:none;margin-top:8px;">
+      <input type="text" id="categoriaOtro" placeholder="Describe la categoría...">
+    </div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Descripción <span class="form-required">*</span></label>
+    <textarea id="descripcion" placeholder="Describe el acto, condición o casi accidente observado..."></textarea>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Acción Correctiva Inmediata <span class="form-required">*</span></label>
+    <textarea id="accion" placeholder="¿Qué acción se tomó o debe tomarse de inmediato?" style="min-height:70px;"></textarea>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Responsable de la Acción Correctiva <span class="form-required">*</span></label>
+    <div style="position:relative;">
+      <input type="text" id="responsable" placeholder="Buscar por nombre..."
+             autocomplete="off" oninput="buscarResponsable()" onfocus="buscarResponsable()">
+      <div id="responsableDropdown" style="display:none;position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);z-index:50;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.15);"></div>
+    </div>
+    <div class="dni-status" id="responsableStatus"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="form-section">
+    <label class="form-label">Lugar y persona observada</label>
+    <div style="margin-bottom:12px;">
+      <label class="form-sublabel">Área / Ubicación <span class="form-required">*</span></label>
+      <select id="ubicacion" onchange="toggleUbicacionOtros()">
+      <option value="">— Seleccionar —</option>
+      <option>Chancado</option>
+      <option>Molienda</option>
+      <option>Flotación</option>
+      <option>Lixiviación</option>
+      <option>Desorción</option>
+      <option>Campamento</option>
+      <option>Laboratorio</option>
+      <option>Cancha de grueso</option>
+      <option>Relavera</option>
+      <option value="Otros">Otros</option>
+      </select>
+    </div>
+    <div id="ubicacionOtrosWrap" style="display:none;margin-bottom:12px;">
+      <label class="form-sublabel">Especifica la ubicación <span class="form-required">*</span></label>
+      <input type="text" id="ubicacionOtros" placeholder="Describe el área o ubicación">
+    </div>
+
+    <div style="margin-bottom:12px;position:relative;">
+      <label class="form-sublabel">Persona observada</label>
+      <input type="text" id="persona" placeholder="Buscar por nombre..." autocomplete="off"
+             oninput="buscarObservadoPorNombre()" onfocus="buscarObservadoPorNombre()">
+      <div id="observadoDropdown" style="display:none;position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);z-index:50;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.15);"></div>
+      <div class="dni-status" id="observadoStatus"></div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label class="form-sublabel">Área del observado <span class="form-required">*</span></label>
+        <input type="text" id="areaReportado" placeholder="Se completa al seleccionar" readonly
+               style="background:var(--surface3);color:var(--text2);">
+      </div>
+      <div>
+        <label class="form-sublabel">Cargo del observado</label>
+        <input type="text" id="cargoReportado" placeholder="Se completa al seleccionar" readonly
+               style="background:var(--surface3);color:var(--text2);">
+      </div>
+    </div>
+    <input type="hidden" id="dniObservado">
+  </div>
+
+  <div class="form-section">
+    <div class="form-row">
+      <div>
+        <label class="form-label">Fecha <span class="form-required">*</span></label>
+        <input type="date" id="fecha">
+      </div>
+      <div>
+        <label class="form-label">Hora <span class="form-required">*</span></label>
+        <input type="time" id="hora">
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="form-section">
+    <label class="form-label">Datos del reportador</label>
+    <div style="margin-bottom:12px;">
+      <label class="form-sublabel">DNI <span class="form-required">*</span></label>
+      <div style="position:relative;">
+        <input type="text" id="dniReportador" placeholder="Ingresa tu DNI (8 dígitos)"
+               maxlength="8" inputmode="numeric" autocomplete="off"
+               oninput="buscarReportadorPorDNI()">
+        <div id="reportadorDropdown" style="display:none;position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);z-index:50;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.15);"></div>
+      </div>
+      <div class="dni-status" id="dniReportadorStatus"></div>
+    </div>
+    <div class="form-row" style="margin-bottom:12px;">
+      <div>
+        <label class="form-sublabel">Nombre <span class="form-required">*</span></label>
+        <input type="text" id="reportador" placeholder="Se completa con el DNI" readonly
+               style="background:var(--surface3);color:var(--text2);">
+      </div>
+      <div>
+        <label class="form-sublabel">Cargo</label>
+        <input type="text" id="cargoReportador" placeholder="Se completa con el DNI" readonly
+               style="background:var(--surface3);color:var(--text2);">
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-sublabel">Área</label>
+      <input type="text" id="areaReportador" placeholder="Se completa con el DNI" readonly
+             style="background:var(--surface3);color:var(--text2);">
+    </div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Foto del hallazgo <span class="form-required">*</span></label>
+    <input type="file" id="inputGaleria" accept="image/*" multiple style="display:none" onchange="handlePhotos(this, 'hallazgo')">
+    <input type="file" id="inputCamara" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos(this, 'hallazgo')">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button type="button" onclick="document.getElementById('inputCamara').click()" style="padding:14px 10px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <span style="font-size:26px;">📷</span>
+        <span>Tomar foto</span>
+      </button>
+      <button type="button" onclick="document.getElementById('inputGaleria').click()" style="padding:14px 10px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <span style="font-size:26px;">🖼️</span>
+        <span>Galería</span>
+      </button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center;">Máximo 5 fotos del hallazgo</div>
+    <div class="photos-grid" id="photosPreview"></div>
+  </div>
+
+  <!-- Sección levantamiento (solo si Cerrado) -->
+  <div id="seccionLevantamiento" style="display:none;">
+    <div class="divider"></div>
+    <div class="form-section">
+      <label class="form-label">Fotos de cierre <span class="form-required">*</span></label>
+      <input type="file" id="inputGaleriaLev" accept="image/*" multiple style="display:none" onchange="handlePhotos(this, 'levantamiento')">
+      <input type="file" id="inputCamaraLev" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos(this, 'levantamiento')">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button type="button" onclick="document.getElementById('inputCamaraLev').click()" style="padding:14px 10px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;">
+          <span style="font-size:26px;">📷</span>
+          <span>Tomar foto</span>
+        </button>
+        <button type="button" onclick="document.getElementById('inputGaleriaLev').click()" style="padding:14px 10px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;">
+          <span style="font-size:26px;">🖼️</span>
+          <span>Galería</span>
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center;">Máximo 5 fotoss de cierre</div>
+      <div class="photos-grid" id="photosLevPreview"></div>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">Acciones realizadas al cierre <span class="form-required">*</span></label>
+      <textarea id="medidasAcciones" placeholder="Describe las acciones realizadas para cerrar el desvío..."></textarea>
+    </div>
+  </div>
+
+  <button class="btn-submit" onclick="guardarReporte()">Guardar Reporte</button>
+  <div style="height:40px;"></div>
+</div>
+
+<!-- TAB: REPORTES -->
+<div class="content" id="tab-reportes" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap;">
+    <div style="font-size:12px;color:var(--text3);font-family:var(--mono);" id="serverSyncInfo">—</div>
+    <button onclick="cargarDelServidor()" id="btnCargarServidor" style="display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);">
+      ↓ Cargar del servidor
+    </button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <input type="text" placeholder="Buscar..." id="searchInput" oninput="renderReportes()" style="flex:1;">
+    <select id="filterTipo" onchange="renderReportes()" style="width:auto;padding:10px 10px;">
+      <option value="">Todos</option>
+      <option value="Acto Subestándar">Acto Sub.</option>
+      <option value="Condición Subestándar">Cond. Sub.</option>
+      <option value="Casi Accidente">Casi Acc.</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <button class="chip" id="filterEstadoTodos"   onclick="setFiltroEstado('')"        style="font-weight:500;">Todos</button>
+    <button class="chip" id="filterEstadoAbierto" onclick="setFiltroEstado('Abierto')" style="font-weight:500;">● Abierto</button>
+    <button class="chip" id="filterEstadoCerrado" onclick="setFiltroEstado('Cerrado')" style="font-weight:500;">● Cerrado</button>
+  </div>
+  <div id="filtroActivoBanner" style="display:none;margin-bottom:12px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--accent-dim);border:1px solid var(--accent);font-size:13px;color:var(--accent);display:flex;justify-content:space-between;align-items:center;">
+    <span id="filtroActivoTexto"></span>
+    <button onclick="limpiarFiltros()" style="background:none;border:none;color:var(--accent);font-size:18px;cursor:pointer;line-height:1;">×</button>
+  </div>
+  <div id="reportesList"></div>
+</div>
+
+<!-- TAB: SEGUIMIENTOS -->
+<div class="content" id="tab-seguimientos" style="display:none;">
+  <div class="seg-header">
+    <div>
+      <h2>Seguimientos</h2>
+      <p style="font-size:12px;color:var(--text3);margin-top:3px;">Responsables con acciones correctivas pendientes</p>
+    </div>
+    <button class="btn-download" onclick="descargarPendientes()">
+      <span>↓</span> Descargar lista
+    </button>
+  </div>
+  <div id="seguimientosList"></div>
+</div>
+
+<!-- TAB: ESTADÍSTICAS -->
+<div class="content" id="tab-stats" style="display:none;">
+  <!-- Filtro mes/año -->
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;">
+    <select id="statsMes" onchange="renderStats()" style="flex:1;padding:9px 12px;font-size:14px;">
+      <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+      <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+      <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <select id="statsAnio" onchange="renderStats()" style="width:90px;padding:9px 12px;font-size:14px;"></select>
+    <button onclick="resetFiltroStats()" style="padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);font-size:13px;cursor:pointer;white-space:nowrap;">Todo</button>
+  </div>
+  <div id="statsPeriodoLabel" style="font-size:12px;color:var(--text3);margin-bottom:8px;font-family:var(--mono);"></div>
+  <div id="statsFiltroActivo" style="display:none;margin-bottom:12px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--accent-dim);border:1px solid var(--accent);font-size:13px;color:var(--accent);display:flex;justify-content:space-between;align-items:center;">
+    <span id="statsFiltroTexto"></span>
+    <button onclick="limpiarFiltrosStats()" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
+  </div>
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="section-title" style="margin-top:8px;">Por estado</div>
+  <div id="statsEstado" style="margin-bottom:20px;"></div>
+  <div class="section-title">Por tipo de reporte</div>
+  <div id="statsTipo" style="margin-bottom:20px;"></div>
+  <div class="section-title">Por nivel de riesgo</div>
+  <div id="statsRiesgo" style="margin-bottom:20px;"></div>
+  <div class="section-title">Por categoría — distribución</div>
+  <canvas id="statsPieChart" style="max-width:280px;max-height:280px;display:block;margin:0 auto 12px;"></canvas>
+  <div id="statsPieLegend" style="margin-bottom:20px;"></div>
+  <div class="section-title">Por categoría — detalle</div>
+  <div id="statsCategoria"></div>
+  <div style="height:40px;"></div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- MODAL EDICIÓN -->
+<div class="modal-overlay" id="editModalOverlay" onclick="closeEditModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="editModalContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEETS_URL='https://script.google.com/macros/s/AKfycbz8s-WGNHNEPPNEuL9sC7sCtoN0OrwuY6h94Rm1bFY2XFHClb2QZgIxYJoWatoo84GK/exec';
+const PENDING_KEY='seguridad_pending', PERSONAL_KEY='seguridad_personal', PENDING_UPDATES_KEY='seguridad_pending_updates';
+
+// ── FUENTE DE VERDAD: siempre el servidor ──
+// localStorage solo guarda:
+//   1. Cola de reportes nuevos pendientes de subir  (PENDING_KEY)
+//   2. Cola de updates pendientes                   (PENDING_UPDATES_KEY)
+//   3. Lista de personal cacheada                   (PERSONAL_KEY)
+// Los reportes confirmados del servidor se guardan en memoria (allReportes)
+// y se mezclan con los pendientes locales para mostrar en pantalla.
+
+let allReportes = []; // reportes del servidor (en memoria, se pierden al recargar)
+let serverLoaded = false; // true una vez que se cargó del servidor al menos una vez
+
+// Devuelve la vista combinada: remotos + pendientes locales (sin duplicar)
+function getReportes(){
+  const pending = getPending();
+  // Los pendientes son objetos completos guardados en la cola
+  const pendingIds = new Set(pending.map(r => String(r.id)));
+  // Filtrar allReportes para que los pendientes no aparezcan duplicados
+  const remotos = allReportes.filter(r => !pendingIds.has(String(r.id)));
+  // Pendientes al inicio (los más recientes, aún no en el server)
+  return [...pending, ...remotos];
+}
+
+const getPending=()=>{try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');}catch{return[];}};
+// savePending ahora guarda objetos completos (no solo IDs)
+const savePending=d=>localStorage.setItem(PENDING_KEY,JSON.stringify(d));
+const getPendingUpdates=()=>{try{return JSON.parse(localStorage.getItem(PENDING_UPDATES_KEY)||'[]');}catch{return[];}};
+const savePendingUpdates=d=>localStorage.setItem(PENDING_UPDATES_KEY,JSON.stringify(d));
+const getPersonal=()=>{try{return JSON.parse(localStorage.getItem(PERSONAL_KEY)||'[]');}catch{return[];}};
+const savePersonal=d=>localStorage.setItem(PERSONAL_KEY,JSON.stringify(d));
+
+let selectedTipo='', selectedRiesgo='', selectedEstado='Abierto';
+let photoDataURLs=[], photoLevDataURLs=[];
+let filtroRiesgo='', filtroCategoria='', filtroTipo='', filtroEstadoLista='';
+let editPhotoLevDataURLs=[];
+let currentEditId=null;
+
+window.addEventListener('load',()=>{
+  document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
+  document.getElementById('hora').value=new Date().toTimeString().slice(0,5);
+  setFiltroEstadoBtnActive();
+  initFiltroStats();
+  updateSyncUI();
+  renderReportes();   // muestra pendientes locales de inmediato mientras carga
+  renderSeguimientos();
+  renderStats();
+  cargarPersonal();
+  // Cargar del servidor automáticamente al abrir
+  if(navigator.onLine) cargarDelServidor(true);
+});
+window.addEventListener('online',()=>{updateSyncUI();autoSync();});
+window.addEventListener('offline',()=>updateSyncUI());
+
+function showTab(tab){
+  ['nuevo','reportes','seguimientos','stats'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===tab?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    el.classList.toggle('active',['nuevo','reportes','seguimientos','stats'][i]===tab);
+  });
+  if(tab==='reportes') renderReportes();
+  if(tab==='seguimientos') renderSeguimientos();
+  if(tab==='stats'){ initFiltroStats(); renderStats(); }
+}
+
+/* ───── SELECCIÓN DE CHIPS ───── */
+function selectEstado(el){
+  document.querySelectorAll('#estado-chips .chip').forEach(c=>c.className='chip');
+  selectedEstado=el.dataset.value;
+  el.className='chip '+(selectedEstado==='Abierto'?'sel-abierto':'sel-cerrado');
+  // Toggle sección levantamiento
+  document.getElementById('seccionLevantamiento').style.display=selectedEstado==='Cerrado'?'block':'none';
+}
+
+function selectTipo(el){
+  document.querySelectorAll('#tipo-chips .chip').forEach(c=>c.className='chip');
+  selectedTipo=el.dataset.value;
+  const m={'Acto Subestándar':'sel-act','Condición Subestándar':'sel-cond','Casi Accidente':'sel-near'};
+  el.className='chip '+(m[selectedTipo]||'sel-act');
+}
+
+function selectRiesgo(el){
+  document.querySelectorAll('#riesgo-chips .chip').forEach(c=>c.className='chip');
+  selectedRiesgo=el.dataset.value;
+  const m={'Bajo':'sel-bajo','Medio':'sel-medio','Alto':'sel-alto'};
+  el.className='chip '+m[selectedRiesgo];
+}
+
+/* ───── BÚSQUEDA DE PERSONAL ───── */
+async function cargarPersonal(){
+  if(!navigator.onLine) return;
+  try{
+    const res=await fetch(SHEETS_URL+'?action=personal');
+    if(res.ok){
+      const json=await res.json();
+      if(json.ok && Array.isArray(json.personal)){
+        savePersonal(json.personal);
+      }
+    }
+  }catch(e){console.error('No se pudo cargar personal:', e);}
+}
+
+// ── Observado: autocomplete por nombre ──
+let observadoSeleccionado = null;
+
+function buscarObservadoPorNombre(){
+  const q = (document.getElementById('persona').value||'').toLowerCase().trim();
+  const dropdown = document.getElementById('observadoDropdown');
+  const status = document.getElementById('observadoStatus');
+
+  // Si se borró la selección previa, limpiar campos readonly
+  if(!q){
+    dropdown.style.display='none';
+    observadoSeleccionado=null;
+    limpiarObservado();
+    return;
+  }
+
+  const personal = getPersonal();
+  const resultados = personal.filter(p =>
+    (p.nombre||'').toLowerCase().includes(q)
+  ).slice(0,8);
+
+  if(!resultados.length){
+    dropdown.style.display='none';
+    status.className='dni-status notfound';
+    status.textContent='No encontrado en la lista de personal';
+    limpiarObservado();
+    return;
+  }
+
+  dropdown.innerHTML = resultados.map((p,i) => `
+    <div onclick="seleccionarObservado(${i})"
+         data-idx="${i}"
+         style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"
+         onmouseover="this.style.background='var(--surface2)'"
+         onmouseout="this.style.background=''">
+      <div style="font-weight:500;">${escapeHtml(p.nombre)}</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${escapeHtml(p.area||'')} · ${escapeHtml(p.cargo||'')} · DNI: ${escapeHtml(p.dni||'')}</div>
+    </div>
+  `).join('');
+  dropdown._results = resultados;
+  dropdown.style.display='block';
+  status.className='dni-status';
+  status.textContent='';
+}
+
+function seleccionarObservado(idx){
+  const dropdown = document.getElementById('observadoDropdown');
+  const p = dropdown._results[idx];
+  if(!p) return;
+  observadoSeleccionado = p;
+  document.getElementById('persona').value = p.nombre||'';
+  document.getElementById('dniObservado').value = p.dni||'';
+  document.getElementById('areaReportado').value = p.area||'';
+  document.getElementById('cargoReportado').value = p.cargo||'';
+  dropdown.style.display='none';
+  const status = document.getElementById('observadoStatus');
+  status.className='dni-status found';
+  status.textContent='✓ '+escapeHtml(p.nombre);
+}
+
+// ── Responsable acción correctiva: autocomplete por nombre ──
+function buscarResponsable(){
+  const q = (document.getElementById('responsable').value||'').toLowerCase().trim();
+  const dd = document.getElementById('responsableDropdown');
+  const status = document.getElementById('responsableStatus');
+  if(!dd) return;
+  if(!q){ dd.style.display='none'; return; }
+
+  const personal = getPersonal();
+  const resultados = personal.filter(p => (p.nombre||'').toLowerCase().includes(q)).slice(0,8);
+
+  if(!resultados.length){ dd.style.display='none'; return; }
+
+  dd.innerHTML = resultados.map((p,i) => `
+    <div onclick="seleccionarResponsable(${i})"
+         style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"
+         onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <div style="font-weight:500;">${escapeHtml(p.nombre||'')}</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${escapeHtml(p.area||'')} · ${escapeHtml(p.cargo||'')}</div>
+    </div>`).join('');
+  dd._results = resultados;
+  dd.style.display='block';
+}
+
+function seleccionarResponsable(idx){
+  const dd = document.getElementById('responsableDropdown');
+  const p = dd._results[idx];
+  if(!p) return;
+  document.getElementById('responsable').value = p.nombre||'';
+  dd.style.display='none';
+  const status = document.getElementById('responsableStatus');
+  if(status){ status.className='dni-status found'; status.textContent='✓ '+escapeHtml(p.nombre||''); }
+}
+
+function limpiarObservado(){
+  document.getElementById('dniObservado').value='';
+  document.getElementById('areaReportado').value='';
+  document.getElementById('cargoReportado').value='';
+}
+
+// Cerrar dropdowns al tocar fuera
+document.addEventListener('click', e=>{
+  [
+    {id:'observadoDropdown',  inputId:'persona'},
+    {id:'reportadorDropdown', inputId:'dniReportador'},
+    {id:'responsableDropdown',inputId:'responsable'},
+  ].forEach(({id, inputId})=>{
+    const dd=document.getElementById(id);
+    if(dd && !dd.contains(e.target) && e.target.id!==inputId) dd.style.display='none';
+  });
+});
+
+// ── Reportador: sugerencias mientras escribe el DNI ──
+function buscarReportadorPorDNI(){
+  const dni = (document.getElementById('dniReportador').value||'').trim();
+  const status = document.getElementById('dniReportadorStatus');
+  const nombre = document.getElementById('reportador');
+  const area   = document.getElementById('areaReportador');
+  const cargo  = document.getElementById('cargoReportador');
+  const dd     = document.getElementById('reportadorDropdown');
+
+  if(!dni){ 
+    if(dd) dd.style.display='none';
+    status.className='dni-status'; status.textContent='';
+    nombre.value=''; area.value=''; cargo.value='';
+    return;
+  }
+
+  const personal = getPersonal();
+
+  // Coincidencia exacta de 8 dígitos → autocompleta directamente
+  if(dni.length === 8){
+    const match = personal.find(p => String(p.dni).trim() === dni);
+    if(dd) dd.style.display='none';
+    if(match){
+      nombre.value = match.nombre||'';
+      area.value   = match.area||'';
+      cargo.value  = match.cargo||'';
+      status.className='dni-status found';
+      status.textContent='✓ '+escapeHtml(match.nombre);
+      return;
+    } else {
+      nombre.value=''; area.value=''; cargo.value='';
+      status.className='dni-status notfound';
+      status.textContent='DNI no encontrado en la lista de personal';
+      return;
+    }
+  }
+
+  // Dígitos parciales → mostrar sugerencias que empiecen con esos dígitos
+  const resultados = personal.filter(p => String(p.dni).trim().startsWith(dni)).slice(0,6);
+  if(!resultados.length){
+    if(dd) dd.style.display='none';
+    status.className='dni-status'; status.textContent='';
+    nombre.value=''; area.value=''; cargo.value='';
+    return;
+  }
+  if(dd){
+    dd.innerHTML = resultados.map((p,i) => `
+      <div onclick="seleccionarReportador(${i})"
+           style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"
+           onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+        <div style="font-weight:500;">${escapeHtml(p.nombre||'')}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">DNI: ${escapeHtml(p.dni||'')} · ${escapeHtml(p.area||'')} · ${escapeHtml(p.cargo||'')}</div>
+      </div>`).join('');
+    dd._results = resultados;
+    dd.style.display='block';
+  }
+  status.className='dni-status'; status.textContent='';
+}
+
+function seleccionarReportador(idx){
+  const dd = document.getElementById('reportadorDropdown');
+  const p = dd._results[idx];
+  if(!p) return;
+  document.getElementById('dniReportador').value  = p.dni||'';
+  document.getElementById('reportador').value     = p.nombre||'';
+  document.getElementById('areaReportador').value = p.area||'';
+  document.getElementById('cargoReportador').value= p.cargo||'';
+  dd.style.display='none';
+  const status = document.getElementById('dniReportadorStatus');
+  status.className='dni-status found';
+  status.textContent='✓ '+escapeHtml(p.nombre||'');
+}
+
+/* ───── VALIDACIÓN Y MANEJO DE FOTOS ───── */
+const IMAGE_SIGNATURES = [
+  [0xFF,0xD8,0xFF],           // JPEG
+  [0x89,0x50,0x4E,0x47],      // PNG
+  [0x47,0x49,0x46],           // GIF
+  [0x52,0x49,0x46,0x46],      // WEBP (RIFF)
+];
+
+function validarFirmaImagen(arrayBuffer){
+  const bytes = new Uint8Array(arrayBuffer).slice(0,8);
+  return IMAGE_SIGNATURES.some(sig => sig.every((b,i) => bytes[i]===b));
+}
+
+function handlePhotos(input, modo){
+  const TIPOS_VALIDOS = ['image/jpeg','image/png','image/gif','image/webp'];
+  const MAX_MB = 10;
+  // Determinar a qué array agregar y dónde renderizar
+  let target, previewId;
+  if(modo==='hallazgo'){ target=photoDataURLs; previewId='photosPreview'; }
+  else if(modo==='levantamiento'){ target=photoLevDataURLs; previewId='photosLevPreview'; }
+  else if(modo==='editLev'){ target=editPhotoLevDataURLs; previewId='editPhotosLevPreview'; }
+
+  const files = Array.from(input.files).slice(0, 5-target.length);
+
+  files.forEach(f=>{
+    if(!TIPOS_VALIDOS.includes(f.type)){
+      showToast('❌ Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+    if(f.size > MAX_MB * 1024 * 1024){
+      showToast('❌ La imagen supera los 10MB');
+      return;
+    }
+    const sliceReader = new FileReader();
+    sliceReader.onload = e2 => {
+      if(!validarFirmaImagen(e2.target.result)){
+        showToast('❌ Archivo rechazado: no es una imagen válida');
+        return;
+      }
+      const r = new FileReader();
+      r.onload = e => {
+        if(target.length>=5) return;
+        const img = new Image();
+        img.onload = () => {
+          const MAX=1024;
+          let w=img.width, h=img.height;
+          if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+          const canvas=document.createElement('canvas');
+          canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          const compressed=canvas.toDataURL('image/jpeg',0.7);
+          if(target.length<5){
+            target.push(compressed);
+            renderPhotosPreview(modo);
+          }
+        };
+        img.onerror=()=>showToast('❌ No se pudo procesar la imagen');
+        img.src=e.target.result;
+      };
+      r.readAsDataURL(f);
+    };
+    sliceReader.readAsArrayBuffer(f.slice(0,8));
+  });
+  input.value='';
+}
+
+function renderPhotosPreview(modo){
+  let target, previewId, removeFunc;
+  if(modo==='hallazgo'){ target=photoDataURLs; previewId='photosPreview'; removeFunc='removePhoto'; }
+  else if(modo==='levantamiento'){ target=photoLevDataURLs; previewId='photosLevPreview'; removeFunc='removePhotoLev'; }
+  else if(modo==='editLev'){ target=editPhotoLevDataURLs; previewId='editPhotosLevPreview'; removeFunc='removeEditPhotoLev'; }
+  const el=document.getElementById(previewId);
+  if(!el) return;
+  el.innerHTML=target.map((u,i)=>
+    `<div class="photo-thumb-wrap"><img src="${u}" class="photo-thumb"><button class="photo-remove" onclick="${removeFunc}(${i})">×</button></div>`
+  ).join('');
+}
+
+function removePhoto(i){photoDataURLs.splice(i,1);renderPhotosPreview('hallazgo');}
+function removePhotoLev(i){photoLevDataURLs.splice(i,1);renderPhotosPreview('levantamiento');}
+function removeEditPhotoLev(i){editPhotoLevDataURLs.splice(i,1);renderPhotosPreview('editLev');}
+
+function g(id){return(document.getElementById(id)?.value||'').trim();}
+
+/* ───── GUARDAR REPORTE ───── */
+function guardarReporte(){
+  if(!selectedEstado)      {showToast('⚠ Selecciona el estado del reporte');return;}
+  if(!selectedTipo)        {showToast('⚠ Selecciona el tipo de reporte');return;}
+  if(!selectedRiesgo)      {showToast('⚠ Selecciona el nivel de riesgo');return;}
+  if(!g('categoria'))      {showToast('⚠ Selecciona una categoría');return;}
+  if(g('categoria')==='Otro' && !g('categoriaOtro')){showToast('⚠ Describe la categoría en Otro');return;}
+  if(!g('descripcion'))    {showToast('⚠ Ingresa una descripción');return;}
+  if(!g('accion'))         {showToast('⚠ Ingresa la acción correctiva inmediata');return;}
+  if(!g('responsable'))    {showToast('⚠ Ingresa el responsable de la acción correctiva');return;}
+  if(!g('ubicacion'))      {showToast('⚠ Selecciona el Área / Ubicación');return;}
+  if(g('ubicacion')==='Otros' && !g('ubicacionOtros')){showToast('⚠ Especifica la ubicación');return;}
+  if(!g('areaReportado'))  {showToast('⚠ Selecciona el área del observado');return;}
+  if(!g('fecha'))          {showToast('⚠ Ingresa la fecha');return;}
+  if(!g('hora'))           {showToast('⚠ Ingresa la hora');return;}
+  if(!g('dniReportador'))  {showToast('⚠ Ingresa tu DNI para identificarte');return;}
+  if(!g('reportador'))     {showToast('⚠ Tu DNI no fue encontrado en la lista de personal');return;}
+  if(photoDataURLs.length===0){showToast('⚠ Agrega al menos una foto del hallazgo');return;}
+
+  // Si está cerrado, validar campos de levantamiento
+  if(selectedEstado==='Cerrado'){
+    if(photoLevDataURLs.length===0){showToast('⚠ Agrega al menos una fotos de cierre');return;}
+    if(!g('medidasAcciones')){showToast('⚠ Describe las medidas/acciones realizadas');return;}
+  }
+
+  // dniObservado viene del campo hidden (seteado al seleccionar del dropdown)
+  const dniObs=g('dniObservado'), persona=g('persona'), areaObs=g('areaReportado'), cargoObs=g('cargoReportado');
+
+  const reporte={
+    id:Date.now().toString(),
+    estado:selectedEstado,
+    tipo:selectedTipo,
+    nivelRiesgo:selectedRiesgo,
+    categoria:g('categoria')==='Otro'?g('categoriaOtro'):g('categoria'),
+    descripcion:g('descripcion'),
+    accion:g('accion'),
+    responsable:g('responsable'),
+    ubicacion:g('ubicacion')==='Otros'?g('ubicacionOtros'):g('ubicacion'),
+    persona:persona,
+    dniObservado:dniObs,
+    areaReportado:areaObs,
+    cargoReportado:cargoObs,
+    fecha:g('fecha'),
+    hora:g('hora'),
+    reportador:g('reportador'),
+    dniReportador:g('dniReportador'),
+    areaReportador:g('areaReportador'),
+    cargoReportador:g('cargoReportador'),
+    fotos:photoDataURLs,
+    fotosLevantamiento:selectedEstado==='Cerrado'?photoLevDataURLs:[],
+    medidasAcciones:selectedEstado==='Cerrado'?g('medidasAcciones'):'',
+    fechaCierre:selectedEstado==='Cerrado'?new Date().toISOString():'',
+    createdAt:new Date().toISOString(),
+    synced:false,
+  };
+
+  // Guardar objeto completo en cola de pendientes
+  const pending=getPending();
+  pending.unshift(reporte); // al inicio para que aparezca primero
+  savePending(pending);
+
+  resetForm();
+  showToast('✓ Reporte guardado'+(navigator.onLine?'':' (se sincronizará online)'));
+  if(navigator.onLine) autoSync();
+  showTab('reportes');
+}
+
+function toggleCategoriaOtro(){
+  const sel=document.getElementById('categoria');
+  const wrap=document.getElementById('categoriaOtroWrap');
+  if(sel && wrap) wrap.style.display=sel.value==='Otro'?'block':'none';
+}
+
+function toggleUbicacionOtros(){
+  const sel=document.getElementById('ubicacion');
+  const wrap=document.getElementById('ubicacionOtrosWrap');
+  if(sel && wrap) wrap.style.display=sel.value==='Otros'?'block':'none';
+}
+
+function resetForm(){
+  selectedTipo=''; selectedRiesgo=''; selectedEstado='Abierto';
+  photoDataURLs=[]; photoLevDataURLs=[];
+  document.querySelectorAll('#tipo-chips .chip,#riesgo-chips .chip').forEach(c=>c.className='chip');
+  // resetear estado a Abierto activo
+  document.querySelectorAll('#estado-chips .chip').forEach(c=>{
+    c.className='chip'+(c.dataset.value==='Abierto'?' sel-abierto':'');
+  });
+  document.getElementById('seccionLevantamiento').style.display='none';
+  ['descripcion','accion','responsable','persona','dniObservado','cargoReportado',
+   'reportador','dniReportador','cargoReportador','areaReportador','areaReportado',
+   'ubicacionOtros','medidasAcciones'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['categoria','ubicacion'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('ubicacionOtrosWrap').style.display='none';
+  document.getElementById('categoriaOtroWrap').style.display='none';
+  const dniRS=document.getElementById('dniReportadorStatus');
+  if(dniRS){dniRS.className='dni-status';dniRS.textContent='';}
+  const obsS=document.getElementById('observadoStatus');
+  if(obsS){obsS.className='dni-status';obsS.textContent='';}
+  const respS=document.getElementById('responsableStatus');
+  if(respS){respS.className='dni-status';respS.textContent='';}
+  ['observadoDropdown','reportadorDropdown','responsableDropdown'].forEach(id=>{
+    const dd=document.getElementById(id); if(dd) dd.style.display='none';
+  });
+  observadoSeleccionado=null;
+  const co=document.getElementById('categoriaOtro'); if(co) co.value='';
+  document.getElementById('photosPreview').innerHTML='';
+  document.getElementById('photosLevPreview').innerHTML='';
+  document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
+  document.getElementById('hora').value=new Date().toTimeString().slice(0,5);
+}
+
+/* ───── FILTROS DE LISTA ───── */
+function limpiarFiltros(){
+  filtroRiesgo=''; filtroCategoria=''; filtroTipo='';
+  renderReportes();
+}
+
+function limpiarFiltrosStats(){
+  filtroRiesgo=''; filtroCategoria=''; filtroTipo='';
+  renderStats();
+}
+
+function setFiltroEstado(estado){
+  filtroEstadoLista=estado;
+  setFiltroEstadoBtnActive();
+  renderReportes();
+}
+
+function setFiltroEstadoBtnActive(){
+  const map={'':'filterEstadoTodos','Abierto':'filterEstadoAbierto','Cerrado':'filterEstadoCerrado'};
+  ['filterEstadoTodos','filterEstadoAbierto','filterEstadoCerrado'].forEach(id=>{
+    document.getElementById(id).className='chip';
+  });
+  const activeId=map[filtroEstadoLista];
+  if(activeId){
+    const cls=filtroEstadoLista==='Abierto'?'sel-abierto':(filtroEstadoLista==='Cerrado'?'sel-cerrado':'sel-both');
+    document.getElementById(activeId).className='chip '+cls;
+  }
+}
+
+/* ───── RENDER REPORTES ───── */
+function renderReportes(){
+  const list=document.getElementById('reportesList');
+  if(!list) return;
+  const banner=document.getElementById('filtroActivoBanner');
+  const texto=document.getElementById('filtroActivoTexto');
+  if(banner && texto){
+    if(filtroRiesgo){ banner.style.display='flex'; texto.textContent='Filtro: Riesgo '+filtroRiesgo; }
+    else if(filtroCategoria){ banner.style.display='flex'; texto.textContent='Filtro: '+filtroCategoria; }
+    else { banner.style.display='none'; }
+  }
+  let data=getReportes();
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  const tipo=document.getElementById('filterTipo')?.value||'';
+  if(q) data=data.filter(r=>
+    r.descripcion.toLowerCase().includes(q)||
+    (r.ubicacion||'').toLowerCase().includes(q)||
+    (r.categoria||'').toLowerCase().includes(q)||
+    r.reportador.toLowerCase().includes(q)||
+    (r.responsable||'').toLowerCase().includes(q)
+  );
+  if(tipo) data=data.filter(r=>r.tipo===tipo);
+  if(filtroRiesgo) data=data.filter(r=>r.nivelRiesgo===filtroRiesgo);
+  if(filtroCategoria) data=data.filter(r=>r.categoria===filtroCategoria);
+  if(filtroTipo) data=data.filter(r=>r.tipo===filtroTipo);
+  if(filtroEstadoLista) data=data.filter(r=>(r.estado||'Abierto')===filtroEstadoLista);
+
+  if(!data.length){
+    list.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><h3>Sin reportes</h3><p style="font-size:13px;">Los reportes guardados aparecerán aquí</p></div>`;
+    return;
+  }
+
+  const badgeMap={'Acto Subestándar':'badge-act','Condición Subestándar':'badge-cond','Casi Accidente':'badge-near'};
+  const riskMap={'Crítico':'risk-critico','Alto':'risk-alto','Medio':'risk-medio','Bajo':'risk-bajo'};
+  const labelMap={'Acto Subestándar':'ACTO','Condición Subestándar':'COND','Casi Accidente':'CASI'};
+
+  list.innerHTML=data.map(r=>{
+    const estado=r.estado||'Abierto';
+    const estClass=estado==='Cerrado'?'estado-cerrado':'estado-abierto';
+    return `
+    <div class="report-card" onclick="openModal('${r.id}')">
+      <div class="report-card-header">
+        <div class="risk-dot ${riskMap[r.nivelRiesgo]||'risk-bajo'}"></div>
+        <div class="report-title">${escapeHtml(r.descripcion.slice(0,80))}${r.descripcion.length>80?'…':''}</div>
+        <span class="report-type-badge ${badgeMap[r.tipo]||'badge-both'}">${labelMap[r.tipo]||r.tipo}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span class="estado-badge ${estClass}"><span class="estado-dot"></span>${estado}</span>
+        <span style="font-size:12px;color:var(--text3);font-family:var(--mono);">${r.fecha}</span>
+      </div>
+      <div class="report-meta">
+        ${r.ubicacion?`<span>📍 ${escapeHtml(r.ubicacion)}</span>`:''}
+        ${r.categoria?`<span>🏷 ${escapeHtml(r.categoria.split(' ')[0])}</span>`:''}
+        <span>👤 ${escapeHtml(r.reportador)}</span>
+      </div>
+      <div class="sync-status ${r.synced?'status-synced':'status-pending'}">
+        <div class="dot"></div>${r.synced?'Sincronizado':'Pendiente de sincronizar'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s){
+  if(s==null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ───── MODAL DETALLE ───── */
+function openModal(id){
+  const r=getReportes().find(x=>x.id===id);
+  if(!r) return;
+  const rc={'Crítico':'var(--purple)','Alto':'var(--danger)','Medio':'var(--warning)','Bajo':'var(--success)'};
+  const color=rc[r.nivelRiesgo]||'var(--text2)';
+  const estado=r.estado||'Abierto';
+  const estColor=estado==='Cerrado'?'var(--success)':'var(--danger)';
+  const row=(label,val,full)=>val?`<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value"${full?' style="text-align:left;flex:1;margin-left:16px;"':''}>${val}</span></div>`:'';
+  const sec=t=>`<div class="detail-section">${t}</div>`;
+
+  const fotosHallazgo=r.fotos&&r.fotos.length?r.fotos:(r.linksFotos||[]);
+  const fotosLev=r.fotosLevantamiento&&r.fotosLevantamiento.length?r.fotosLevantamiento:(r.linksFotosLevantamiento||[]);
+
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">${escapeHtml(r.tipo)}</div>
+    <div class="detail-row"><span class="detail-label">Estado</span><span class="detail-value" style="color:${estColor};font-weight:600;">● ${escapeHtml(estado)}</span></div>
+    ${row('Nivel de riesgo',`<span style="color:${color};font-weight:500">● ${escapeHtml(r.nivelRiesgo)}</span>`)}
+    ${row('Categoría',escapeHtml(r.categoria))}
+    ${row('Descripción',escapeHtml(r.descripcion),true)}
+    ${row('Acción correctiva inmediata',escapeHtml(r.accion),true)}
+    ${row('Responsable de acción',escapeHtml(r.responsable))}
+    ${sec('Lugar / Persona observada')}
+    ${row('Área / Ubicación',escapeHtml(r.ubicacion))}
+    ${row('Persona observada',escapeHtml(r.persona))}
+    ${row('DNI observado',escapeHtml(r.dniObservado))}
+    ${row('Área del observado',escapeHtml(r.areaReportado))}
+    ${row('Cargo del observado',escapeHtml(r.cargoReportado))}
+    ${sec('Reportador')}
+    ${row('Nombre',escapeHtml(r.reportador))}
+    ${row('DNI',escapeHtml(r.dniReportador))}
+    ${row('Área',escapeHtml(r.areaReportador))}
+    ${row('Cargo',escapeHtml(r.cargoReportador))}
+    ${row('Fecha / Hora',`${escapeHtml(r.fecha)}${r.hora?' '+escapeHtml(r.hora):''}`)}
+    ${estado==='Cerrado'?sec('Cierre'):''}
+    ${estado==='Cerrado'&&r.medidasAcciones?row('Acciones realizadas',escapeHtml(r.medidasAcciones),true):''}
+    ${estado==='Cerrado'&&r.fechaCierre?row('Fecha cierre',new Date(r.fechaCierre).toLocaleString('es-PE')):''}
+    <div class="detail-row"><span class="detail-label">Sincronización</span>
+      <span class="detail-value ${r.synced?'status-synced':'status-pending'}">${r.synced?'✓ Sincronizado':'⏳ Pendiente'}</span>
+    </div>
+    ${fotosHallazgo.length?`<div style="margin-top:14px;"><div class="section-title">Fotos del hallazgo (${fotosHallazgo.length})</div><div class="photos-modal-grid">${fotosHallazgo.map(f=>`<img src="${typeof f==='string'?f:''}" onerror="this.style.opacity=0.3">`).join('')}</div></div>`:''}
+    ${fotosLev.length?`<div style="margin-top:14px;"><div class="section-title">Fotos de cierre (${fotosLev.length})</div><div class="photos-modal-grid">${fotosLev.map(f=>`<img src="${typeof f==='string'?f:''}" onerror="this.style.opacity=0.3">`).join('')}</div></div>`:''}
+    <div class="modal-actions">
+      <button class="btn-close-modal" onclick="closeModalBtn()">Cerrar</button>
+      <button class="btn-edit" onclick="abrirEdicion('${r.id}')">Editar</button>
+      <button class="btn-delete" onclick="deleteReporte('${r.id}')">Eliminar</button>
+    </div>`;
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e){if(e.target===document.getElementById('modalOverlay')) closeModalBtn();}
+function closeModalBtn(){document.getElementById('modalOverlay').classList.remove('open');}
+
+function deleteReporte(id){
+  if(!confirm('¿Eliminar este reporte?')) return;
+  // Borrar de la cola de pendientes (si está ahí)
+  savePending(getPending().filter(r=>r.id!==id));
+  // Borrar de allReportes (si ya estaba sincronizado)
+  allReportes=allReportes.filter(r=>r.id!==id);
+  closeModalBtn(); renderReportes(); renderStats(); renderSeguimientos();
+  showToast('Reporte eliminado');
+}
+
+/* ───── MODAL EDICIÓN ───── */
+function abrirEdicion(id){
+  const r=getReportes().find(x=>x.id===id);
+  if(!r) return;
+  currentEditId=id;
+  editPhotoLevDataURLs=[];
+  const estadoActual=r.estado||'Abierto';
+  closeModalBtn();
+
+  document.getElementById('editModalContent').innerHTML=`
+    <div class="modal-title">Editar reporte</div>
+    <div class="edit-info-card">
+      <div><strong>Tipo:</strong> ${escapeHtml(r.tipo)}</div>
+      <div><strong>Categoría:</strong> ${escapeHtml(r.categoria||'—')}</div>
+      <div><strong>Lugar:</strong> ${escapeHtml(r.ubicacion||'—')}</div>
+      <div><strong>Descripción:</strong> ${escapeHtml((r.descripcion||'').slice(0,100))}${(r.descripcion||'').length>100?'…':''}</div>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">Cambiar estado</label>
+      <div class="chip-group" id="editEstadoChips">
+        <div class="chip ${estadoActual==='Abierto'?'sel-abierto':''}" data-value="Abierto" onclick="selectEditEstado(this)">● Abierto</div>
+        <div class="chip ${estadoActual==='Cerrado'?'sel-cerrado':''}" data-value="Cerrado" onclick="selectEditEstado(this)">● Cerrado</div>
+      </div>
+    </div>
+
+    <div id="editLevantamientoSection" style="display:${estadoActual==='Cerrado'?'block':'none'};">
+      <div class="form-section">
+        <label class="form-label">Fotos de cierre <span class="form-required">*</span></label>
+        <input type="file" id="editInputGaleriaLev" accept="image/*" multiple style="display:none" onchange="handlePhotos(this, 'editLev')">
+        <input type="file" id="editInputCamaraLev" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos(this, 'editLev')">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button type="button" onclick="document.getElementById('editInputCamaraLev').click()" style="padding:14px 10px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <span style="font-size:26px;">📷</span><span>Tomar foto</span>
+          </button>
+          <button type="button" onclick="document.getElementById('editInputGaleriaLev').click()" style="padding:14px 10px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <span style="font-size:26px;">🖼️</span><span>Galería</span>
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center;">${r.fotosLevantamiento&&r.fotosLevantamiento.length?'Máximo 5 fotos de cierre. Si subes nuevas, reemplazarán las existentes.':'Máximo 5 fotoss de cierre'}</div>
+        <div class="photos-grid" id="editPhotosLevPreview"></div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Acciones realizadas al cierre <span class="form-required">*</span></label>
+        <textarea id="editMedidasAcciones" placeholder="Describe las acciones realizadas al cierre...">${escapeHtml(r.medidasAcciones||'')}</textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-close-modal" onclick="closeEditModalBtn()">Cancelar</button>
+      <button class="btn-edit" onclick="guardarEdicion()">Guardar cambios</button>
+    </div>
+  `;
+  document.getElementById('editModalOverlay').classList.add('open');
+}
+
+let selectedEditEstado='';
+function selectEditEstado(el){
+  document.querySelectorAll('#editEstadoChips .chip').forEach(c=>c.className='chip');
+  selectedEditEstado=el.dataset.value;
+  el.className='chip '+(selectedEditEstado==='Abierto'?'sel-abierto':'sel-cerrado');
+  document.getElementById('editLevantamientoSection').style.display=selectedEditEstado==='Cerrado'?'block':'none';
+}
+
+function closeEditModal(e){if(e.target===document.getElementById('editModalOverlay')) closeEditModalBtn();}
+function closeEditModalBtn(){document.getElementById('editModalOverlay').classList.remove('open');currentEditId=null;}
+
+function guardarEdicion(){
+  if(!currentEditId) return;
+  const reportes=getReportes();
+  const idx=reportes.findIndex(r=>r.id===currentEditId);
+  if(idx<0) return;
+  const r=reportes[idx];
+
+  // Determinar el estado seleccionado (puede no haber cambiado)
+  const nuevoEstado=selectedEditEstado||r.estado||'Abierto';
+
+  // Si va a cerrado, validar foto y medidas
+  if(nuevoEstado==='Cerrado'){
+    const tieneNuevaFoto=editPhotoLevDataURLs.length>0;
+    const tieneFotoVieja=(r.fotosLevantamiento&&r.fotosLevantamiento.length)||(r.linksFotosLevantamiento&&r.linksFotosLevantamiento.length);
+    if(!tieneNuevaFoto && !tieneFotoVieja){
+      showToast('⚠ Agrega al menos una fotos de cierre');
+      return;
+    }
+    const medidas=document.getElementById('editMedidasAcciones').value.trim();
+    if(!medidas){
+      showToast('⚠ Describe las medidas/acciones realizadas');
+      return;
+    }
+    r.medidasAcciones=medidas;
+    if(tieneNuevaFoto){
+      r.fotosLevantamiento=editPhotoLevDataURLs;
+      r.linksFotosLevantamiento=[]; // se regenerarán al sincronizar
+    }
+    if(r.estado!=='Cerrado'){
+      r.fechaCierre=new Date().toISOString();
+    }
+  } else {
+    // Pasar a Abierto: limpiar datos de cierre
+    if(r.estado==='Cerrado'){
+      r.fechaCierre='';
+    }
+  }
+
+  r.estado=nuevoEstado;
+  r.synced=false;
+  r.updatedAt=new Date().toISOString();
+
+  // Actualizar en allReportes (memoria)
+  const remotoIdx=allReportes.findIndex(x=>x.id===r.id);
+  if(remotoIdx>=0) allReportes[remotoIdx]=r;
+
+  // Si estaba en la cola de pendientes (aún no subido), actualizar ahí también
+  const pendingQueue=getPending();
+  const pendingIdx=pendingQueue.findIndex(x=>x.id===r.id);
+  if(pendingIdx>=0){
+    pendingQueue[pendingIdx]=r;
+    savePending(pendingQueue);
+    // No agregamos a pendingUpdates porque aún no se ha subido al server
+  } else {
+    // Ya estaba en el server: agregar a cola de updates
+    const pendingUpdates=getPendingUpdates();
+    pendingUpdates.push({type:'update', id:r.id, payload:r});
+    savePendingUpdates(pendingUpdates);
+  }
+
+  closeEditModalBtn();
+  renderReportes(); renderStats(); renderSeguimientos();
+  showToast('✓ Reporte actualizado'+(navigator.onLine?'':' (se sincronizará online)'));
+  if(navigator.onLine) autoSync();
+}
+
+/* ───── SEGUIMIENTOS ───── */
+function renderSeguimientos(){
+  const list=document.getElementById('seguimientosList');
+  if(!list) return;
+
+  const reportes=getReportes();
+  const abiertos=reportes.filter(r=>(r.estado||'Abierto')==='Abierto');
+
+  // Actualizar badge en tab
+  const badge=document.getElementById('segBadge');
+  if(abiertos.length>0){
+    badge.textContent=abiertos.length;
+    badge.style.display='inline-block';
+  }else{
+    badge.style.display='none';
+  }
+
+  // Agrupar por responsable de acción correctiva
+  const porResponsable={};
+  abiertos.forEach(r=>{
+    const resp=String(r.responsable||'').trim();
+    if(!resp) return;
+    const key=resp.toLowerCase();
+    if(!porResponsable[key]){
+      porResponsable[key]={nombre:resp, reportes:[]};
+    }
+    porResponsable[key].reportes.push(r);
+  });
+
+  const grupos=Object.values(porResponsable).sort((a,b)=>b.reportes.length-a.reportes.length);
+
+  if(!grupos.length){
+    list.innerHTML=`<div class="empty-state"><div class="empty-icon">✓</div><h3>Sin pendientes</h3><p style="font-size:13px;">No hay reportes abiertos pendientes de levantar</p></div>`;
+    return;
+  }
+
+  list.innerHTML=grupos.map(g=>`
+    <div class="seg-card">
+      <div class="seg-person">
+        <div style="flex:1;min-width:0;">
+          <div class="seg-name">${escapeHtml(g.nombre)}</div>
+          <div class="seg-info">${g.reportes.length} acción${g.reportes.length>1?'es':''} correctiva${g.reportes.length>1?'s':''} pendiente${g.reportes.length>1?'s':''}</div>
+        </div>
+        <div>
+          <div class="seg-count">${g.reportes.length}</div>
+          <div class="seg-count-lbl">pendiente${g.reportes.length>1?'s':''}</div>
+        </div>
+      </div>
+      <div class="seg-pendientes">
+        ${g.reportes.map(r=>`<span class="seg-pendiente-chip" onclick="event.stopPropagation();openModal('${r.id}')" style="cursor:pointer;" title="${escapeHtml((r.descripcion||'').slice(0,80))}">${escapeHtml((r.categoria||r.tipo||'').split(' ').slice(0,3).join(' '))} — ${escapeHtml(r.fecha)}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ───── DESCARGAR PENDIENTES ───── */
+function descargarPendientes(){
+  const reportes=getReportes();
+  const abiertos=reportes.filter(r=>(r.estado||'Abierto')==='Abierto');
+
+  if(!abiertos.length){
+    showToast('No hay reportes abiertos pendientes');
+    return;
+  }
+
+  // Agrupar por responsable
+  const porResponsable={};
+  abiertos.forEach(r=>{
+    const resp=String(r.responsable||'').trim()||'(Sin responsable asignado)';
+    const key=resp.toLowerCase();
+    if(!porResponsable[key]){ porResponsable[key]={nombre:resp, reportes:[]}; }
+    porResponsable[key].reportes.push(r);
+  });
+  const grupos=Object.values(porResponsable).sort((a,b)=>b.reportes.length-a.reportes.length);
+
+  const hoy=new Date();
+  const fechaTxt=hoy.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const horaTxt=hoy.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',hour12:false});
+
+  const html=`<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8">
+<title>Pendientes RACS — ${fechaTxt}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#1a1a1a;background:#fff;padding:24px;line-height:1.5;}
+  .header{background:#1a6fd4;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0;}
+  .header h1{font-size:18px;font-weight:700;letter-spacing:0.02em;}
+  .header p{font-size:11px;opacity:0.9;margin-top:3px;}
+  .meta{background:#eef3f9;padding:10px 20px;border-bottom:2px solid #1a6fd4;font-size:11px;color:#555;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  .meta strong{color:#1a2636;}
+  .resumen{padding:14px 20px;background:#fff;border:1px solid #e0e6ec;border-top:none;}
+  .resumen h2{font-size:13px;font-weight:600;margin-bottom:6px;color:#1a2636;text-transform:uppercase;letter-spacing:0.05em;}
+  .resumen-num{display:inline-block;background:#fcebeb;color:#a32d2d;padding:2px 10px;border-radius:12px;font-weight:700;font-size:13px;margin-right:8px;}
+  .grupo{background:#fff;border:1px solid #e0e6ec;border-radius:8px;margin-top:14px;overflow:hidden;page-break-inside:avoid;}
+  .grupo-head{background:#f7fafd;padding:12px 16px;border-bottom:1px solid #e0e6ec;display:flex;justify-content:space-between;align-items:center;}
+  .grupo-nombre{font-size:14px;font-weight:600;color:#1a2636;}
+  .grupo-count{background:#a32d2d;color:#fff;padding:3px 12px;border-radius:14px;font-size:12px;font-weight:600;}
+  table{width:100%;border-collapse:collapse;font-size:11px;}
+  thead tr{background:#fafafa;}
+  th{padding:8px 10px;text-align:left;font-weight:600;color:#666;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid #e0e6ec;}
+  td{padding:8px 10px;border-bottom:1px solid #f0f0ec;vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  .riesgo-alto{color:#a32d2d;font-weight:600;}
+  .riesgo-medio{color:#854f0b;font-weight:600;}
+  .riesgo-bajo{color:#1a9e5c;font-weight:600;}
+  .footer{margin-top:24px;padding:12px 20px;font-size:10px;color:#888;border-top:2px solid #1a6fd4;text-align:right;}
+  .actions{position:fixed;bottom:20px;right:20px;display:flex;gap:8px;}
+  .actions button{padding:10px 18px;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-family:Arial;font-weight:500;}
+  .btn-print{background:#1a6fd4;color:#fff;}
+  .btn-close{background:#eee;color:#333;}
+  @media print{
+    body{padding:12px;}
+    .actions{display:none;}
+    .grupo{page-break-inside:avoid;}
+  }
+</style>
+</head><body>
+<div class="header">
+  <h1>RACS Planta de Beneficio — Pendientes por levantar</h1>
+  <p>Acciones correctivas abiertas, agrupadas por responsable</p>
+</div>
+<div class="meta">
+  <span><strong>Generado:</strong> ${fechaTxt} ${horaTxt}</span>
+  <span><strong>Total pendientes:</strong> ${abiertos.length} reporte${abiertos.length>1?'s':''}</span>
+  <span><strong>Responsables:</strong> ${grupos.length}</span>
+</div>
+<div class="resumen">
+  <h2>Resumen</h2>
+  ${grupos.map(g=>`<span class="resumen-num">${g.reportes.length}</span><span style="font-size:12px;margin-right:14px;">${escapeHtml(g.nombre)}</span>`).join('')}
+</div>
+${grupos.map(g=>{
+  const filas=g.reportes.map((r,i)=>{
+    const riesgoClass=r.nivelRiesgo==='Alto'?'riesgo-alto':(r.nivelRiesgo==='Medio'?'riesgo-medio':'riesgo-bajo');
+    return `<tr>
+      <td style="text-align:center;color:#888;">${i+1}</td>
+      <td>${escapeHtml(r.fecha||'')}</td>
+      <td>${escapeHtml(r.tipo||'—')}</td>
+      <td>${escapeHtml(r.categoria||'—')}</td>
+      <td><span class="${riesgoClass}">${escapeHtml(r.nivelRiesgo||'—')}</span></td>
+      <td>${escapeHtml(r.ubicacion||'—')}</td>
+      <td>${escapeHtml((r.descripcion||'').slice(0,140))}${(r.descripcion||'').length>140?'…':''}</td>
+      <td>${escapeHtml((r.accion||'').slice(0,140))}${(r.accion||'').length>140?'…':''}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="grupo">
+    <div class="grupo-head">
+      <div class="grupo-nombre">📌 ${escapeHtml(g.nombre)}</div>
+      <div class="grupo-count">${g.reportes.length} pendiente${g.reportes.length>1?'s':''}</div>
+    </div>
+    <table>
+      <thead><tr>
+        <th style="width:30px;">#</th>
+        <th style="width:75px;">Fecha</th>
+        <th style="width:90px;">Tipo</th>
+        <th style="width:120px;">Categoría</th>
+        <th style="width:55px;">Riesgo</th>
+        <th style="width:90px;">Ubicación</th>
+        <th>Descripción</th>
+        <th>Acción correctiva</th>
+      </tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+  </div>`;
+}).join('')}
+<div class="footer">RACS Planta de Beneficio — Documento generado el ${fechaTxt} a las ${horaTxt}</div>
+<div class="actions">
+  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+</div>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  window.open(url,'_blank');
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
+/* ───── ESTADÍSTICAS ───── */
+let statsFiltrando = true;
+let pieChartInstance = null;
+
+function initFiltroStats(){
+  const now = new Date();
+  const selMes = document.getElementById('statsMes');
+  const selAnio = document.getElementById('statsAnio');
+  if(!selMes || !selAnio) return;
+  const reportes = getReportes();
+  const anios = new Set(reportes.map(r => r.fecha ? r.fecha.substring(0,4) : null).filter(Boolean));
+  anios.add(String(now.getFullYear()));
+  const sorted = Array.from(anios).sort().reverse();
+  selAnio.innerHTML = sorted.map(a => `<option value="${a}">${a}</option>`).join('');
+  selMes.value = String(now.getMonth()+1);
+  selAnio.value = String(now.getFullYear());
+}
+
+function resetFiltroStats(){
+  statsFiltrando = false;
+  document.getElementById('statsPeriodoLabel').textContent = 'Mostrando: todos los reportes';
+  renderStats();
+  statsFiltrando = true;
+}
+
+function getReportesFiltrados(){
+  const todos = getReportes();
+  const selMes = document.getElementById('statsMes');
+  const selAnio = document.getElementById('statsAnio');
+  let data = todos;
+  if(statsFiltrando && selMes && selAnio){
+    const mes = selMes.value.padStart(2,'0');
+    const anio = selAnio.value;
+    data = data.filter(r => r.fecha && r.fecha.startsWith(anio+'-'+mes));
+  }
+  if(filtroRiesgo) data = data.filter(r => r.nivelRiesgo === filtroRiesgo);
+  if(filtroCategoria) data = data.filter(r => r.categoria === filtroCategoria);
+  if(filtroTipo) data = data.filter(r => r.tipo === filtroTipo);
+  return data;
+}
+
+function drawPieChart(cats, total){
+  const canvas = document.getElementById('statsPieChart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 280, H = 280;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0,0,W,H);
+  const sorted = Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(!sorted.length){
+    ctx.fillStyle='#8a9bb0'; ctx.font='14px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Sin datos',W/2,H/2); return;
+  }
+  const COLORS=['#4f8ef7','#f7a84f','#4fd98e','#f74f4f','#b04fff','#4fdef7','#f7e24f','#f74fa8'];
+  const cx=W/2, cy=H/2, r=110, rInner=52;
+  let angle = -Math.PI/2;
+  sorted.forEach(([cat,count],i)=>{
+    const slice = (count/total) * Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,angle,angle+slice);
+    ctx.closePath();
+    ctx.fillStyle=COLORS[i%COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle='#f0f4f8'; ctx.lineWidth=2; ctx.stroke();
+    if(slice > 0.25){
+      const midA = angle + slice/2;
+      const tx = cx + (r*0.68)*Math.cos(midA);
+      const ty = cy + (r*0.68)*Math.sin(midA);
+      ctx.fillStyle='#fff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(Math.round(count/total*100)+'%', tx, ty);
+    }
+    angle += slice;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,rInner,0,Math.PI*2);
+  ctx.fillStyle='#f0f4f8'; ctx.fill();
+  ctx.fillStyle='#1a2636'; ctx.font='bold 22px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(total, cx, cy-8);
+  ctx.fillStyle='#4a6080'; ctx.font='11px sans-serif';
+  ctx.fillText('reportes', cx, cy+12);
+
+  const legend = document.getElementById('statsPieLegend');
+  legend.innerHTML = sorted.map(([cat,count],i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;">
+      <div style="width:10px;height:10px;border-radius:2px;background:${COLORS[i%COLORS.length]};flex-shrink:0;"></div>
+      <span style="color:var(--text2);flex:1;">${escapeHtml(cat)}</span>
+      <span style="font-family:var(--mono);color:var(--text3);">${count} (${Math.round(count/total*100)}%)</span>
+    </div>`).join('');
+}
+
+function filtrarPorTipo(tipo){
+  if(filtroTipo===tipo){ filtroTipo=''; }
+  else { filtroTipo=tipo; filtroRiesgo=''; filtroCategoria=''; }
+  renderStats();
+}
+
+function filtrarPorRiesgo(nivel){
+  if(filtroRiesgo===nivel){ filtroRiesgo=''; }
+  else { filtroRiesgo=nivel; filtroCategoria=''; }
+  renderStats();
+}
+
+function filtrarPorCategoria(cat){
+  if(filtroCategoria===cat){ filtroCategoria=''; }
+  else { filtroCategoria=cat; filtroRiesgo=''; }
+  renderStats();
+}
+
+function renderStats(){
+  const reportes = getReportesFiltrados();
+  const selMes = document.getElementById('statsMes');
+  const selAnio = document.getElementById('statsAnio');
+  const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  const lbl = document.getElementById('statsPeriodoLabel');
+  if(lbl){
+    if(!statsFiltrando) lbl.textContent='Mostrando: todos los reportes';
+    else if(selMes && selAnio) lbl.textContent=`Mostrando: ${meses[parseInt(selMes.value)-1]} ${selAnio.value}`;
+  }
+  const bannerFiltro = document.getElementById('statsFiltroActivo');
+  const textoFiltro = document.getElementById('statsFiltroTexto');
+  if(bannerFiltro && textoFiltro){
+    if(filtroTipo){ bannerFiltro.style.display='flex'; textoFiltro.textContent='🔍 Filtrado por tipo: '+filtroTipo; }
+    else if(filtroRiesgo){ bannerFiltro.style.display='flex'; textoFiltro.textContent='🔍 Filtrado por riesgo: '+filtroRiesgo; }
+    else if(filtroCategoria){ bannerFiltro.style.display='flex'; textoFiltro.textContent='🔍 Filtrado por categoría: '+filtroCategoria; }
+    else { bannerFiltro.style.display='none'; }
+  }
+
+  const total = reportes.length;
+  const actos = reportes.filter(r=>r.tipo==='Acto Subestándar').length;
+  const casi  = reportes.filter(r=>r.tipo==='Casi Accidente').length;
+  const altos = reportes.filter(r=>r.nivelRiesgo==='Alto').length;
+  const abiertos = reportes.filter(r=>(r.estado||'Abierto')==='Abierto').length;
+  const cerrados = reportes.filter(r=>r.estado==='Cerrado').length;
+
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total reportes</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--danger)">${abiertos}</div><div class="stat-label">Abiertos</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--success)">${cerrados}</div><div class="stat-label">Cerrados</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--danger)">${altos}</div><div class="stat-label">Riesgo Alto</div></div>`;
+
+  // Por estado
+  const maxEst=Math.max(abiertos,cerrados,1);
+  document.getElementById('statsEstado').innerHTML=`
+    <div style="margin-bottom:10px;padding:8px;border-radius:var(--radius-sm);">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <span style="color:var(--danger);font-weight:500;">● Abierto</span>
+        <span style="font-family:var(--mono);color:var(--text2);">${abiertos}</span>
+      </div>
+      <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${Math.round(abiertos/maxEst*100)}%;background:var(--danger);border-radius:3px;"></div></div>
+    </div>
+    <div style="margin-bottom:10px;padding:8px;border-radius:var(--radius-sm);">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <span style="color:var(--success);font-weight:500;">● Cerrado</span>
+        <span style="font-family:var(--mono);color:var(--text2);">${cerrados}</span>
+      </div>
+      <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${Math.round(cerrados/maxEst*100)}%;background:var(--success);border-radius:3px;"></div></div>
+    </div>`;
+
+  // Por tipo
+  const tipoMap={'Acto Subestándar':['var(--danger)',actos],'Condición Subestándar':['var(--warning)',reportes.filter(r=>r.tipo==='Condición Subestándar').length],'Casi Accidente':['var(--purple)',casi]};
+  const maxTipo = Math.max(...Object.values(tipoMap).map(v=>v[1]),1);
+  document.getElementById('statsTipo').innerHTML = Object.entries(tipoMap).map(([tipo,[color,count]])=>`
+    <div onclick="filtrarPorTipo('${tipo}')" style="margin-bottom:10px;cursor:pointer;padding:8px;border-radius:var(--radius-sm);border:1px solid ${filtroTipo===tipo?color:'transparent'};background:${filtroTipo===tipo?'rgba(255,255,255,0.04)':'transparent'};transition:all 0.2s;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;align-items:center;">
+        <span style="color:${color};font-weight:500;">${tipo}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-family:var(--mono);color:var(--text2);">${count}</span>
+          ${filtroTipo===tipo?`<span style="font-size:10px;background:${color};color:#fff;padding:2px 6px;border-radius:10px;font-weight:600;">filtrado</span>`:''}
+        </div>
+      </div>
+      <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${count>0?Math.round(count/maxTipo*100):0}%;background:${color};border-radius:3px;transition:width 0.4s;"></div>
+      </div>
+    </div>`
+  ).join('') || '<p style="color:var(--text3);font-size:13px;">Sin datos aún</p>';
+
+  // Por nivel de riesgo
+  const riesgoMap={'Alto':['var(--danger)',altos],'Medio':['var(--warning)',reportes.filter(r=>r.nivelRiesgo==='Medio').length],'Bajo':['var(--success)',reportes.filter(r=>r.nivelRiesgo==='Bajo').length]};
+  const maxRiesgo = Math.max(...Object.values(riesgoMap).map(v=>v[1]),1);
+  document.getElementById('statsRiesgo').innerHTML = Object.entries(riesgoMap).map(([nivel,[color,count]])=>`
+    <div onclick="filtrarPorRiesgo('${nivel}')" style="margin-bottom:10px;cursor:pointer;padding:8px;border-radius:var(--radius-sm);border:1px solid ${filtroRiesgo===nivel?color:'transparent'};background:${filtroRiesgo===nivel?'rgba(255,255,255,0.04)':'transparent'};transition:all 0.2s;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;align-items:center;">
+        <span style="color:${color};font-weight:500;">● ${nivel}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-family:var(--mono);color:var(--text2);">${count}</span>
+          ${filtroRiesgo===nivel?`<span style="font-size:10px;background:${color};color:#fff;padding:2px 6px;border-radius:10px;font-weight:600;">filtrado</span>`:''}
+        </div>
+      </div>
+      <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${Math.round(count/maxRiesgo*100)}%;background:${color};border-radius:3px;transition:width 0.4s;"></div>
+      </div>
+    </div>`
+  ).join('');
+
+  // Por categoría (barras + torta)
+  const cats={};
+  reportes.forEach(r=>{if(r.categoria) cats[r.categoria]=(cats[r.categoria]||0)+1;});
+  const sortedC=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const maxCat=sortedC[0]?.[1]||1;
+
+  drawPieChart(cats, total);
+
+  document.getElementById('statsCategoria').innerHTML=sortedC.length
+    ?sortedC.map(([cat,count])=>`
+      <div onclick="filtrarPorCategoria('${cat.replace(/'/g,"\\'")}')" style="margin-bottom:10px;cursor:pointer;padding:8px;border-radius:var(--radius-sm);border:1px solid ${filtroCategoria===cat?'var(--accent)':'transparent'};background:${filtroCategoria===cat?'var(--accent-dim)':'transparent'};transition:all 0.2s;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;align-items:center;">
+          <span>${escapeHtml(cat)}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-family:var(--mono);color:var(--text2);">${count}</span>
+            ${filtroCategoria===cat?'<span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px;font-weight:600;">filtrado</span>':''}
+          </div>
+        </div>
+        <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${Math.round(count/maxCat*100)}%;background:var(--accent);border-radius:3px;"></div>
+        </div>
+      </div>`).join('')
+    :`<p style="color:var(--text3);font-size:13px;">Sin datos de categoría aún</p>`;
+
+  const pendingCount=getPending().length+getPendingUpdates().length;
+  if(pendingCount>0) document.getElementById('statsCategoria').innerHTML+=
+    `<div style="margin-top:16px;padding:12px;background:var(--warning-dim);border-radius:var(--radius-sm);font-size:13px;color:var(--warning);">
+      ⏳ ${pendingCount} cambio${pendingCount>1?'s':''} pendiente${pendingCount>1?'s':''} de sincronizar
+    </div>`;
+}
+
+/* ───── SINCRONIZACIÓN ───── */
+function updateSyncUI(){
+  const online=navigator.onLine;
+  const pending=getPending().length+getPendingUpdates().length; // solo colas, no allReportes
+  const dot=document.getElementById('syncDot'), label=document.getElementById('syncLabel');
+  document.getElementById('offlineBanner').classList.toggle('show',!online);
+  if(!online){dot.className='sync-dot';label.textContent='offline';}
+  else if(pending){dot.className='sync-dot pending';label.textContent=pending+' pend.';}
+  else{dot.className='sync-dot online';label.textContent='online';}
+}
+
+async function autoSync(){
+  if(!navigator.onLine) return;
+  const pending=getPending();
+  const pendingUpdates=getPendingUpdates();
+  if(!pending.length && !pendingUpdates.length) return;
+
+  document.getElementById('syncDot').className='sync-dot syncing';
+  document.getElementById('syncLabel').textContent='sincronizando';
+  document.getElementById('syncBanner').classList.add('show');
+
+  // ── 1) Sincronizar reportes nuevos ──
+  // pending ahora contiene objetos completos (no solo IDs)
+  const sincronizados=[];
+
+  for(const r of pending){
+    try {
+      // Subir fotos del hallazgo
+      const links=[];
+      for(let i=0;i<(r.fotos||[]).length;i++){
+        const link=await subirFoto(r.fotos[i], `reporte_${r.id}_hallazgo${i+1}`);
+        if(link) links.push(link);
+      }
+      r.linksFotos=links;
+      r.fotos=[];
+
+      // Subir fotos de cierre
+      const linksLev=[];
+      for(let i=0;i<(r.fotosLevantamiento||[]).length;i++){
+        const link=await subirFoto(r.fotosLevantamiento[i], `reporte_${r.id}_levantamiento${i+1}`);
+        if(link) linksLev.push(link);
+      }
+      r.linksFotosLevantamiento=linksLev;
+      r.fotosLevantamiento=[];
+
+      const res=await fetch(SHEETS_URL,{
+        method:'POST', mode:'cors',
+        headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify({type:'reporte',data:[r]})
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+
+      // Subido OK: mover a allReportes y sacar de la cola
+      r.synced=true;
+      allReportes.unshift(r);
+      sincronizados.push(r.id);
+    } catch(err) {
+      console.error('Error subiendo reporte:', err);
+      document.getElementById('syncBanner').classList.remove('show');
+      updateSyncUI();
+      showToast('Sin conexión, se reintentará luego');
+      // Guardar el estado parcial (fotos ya subidas quedan como links)
+      savePending(pending.filter(x=>!sincronizados.includes(x.id)));
+      return;
+    }
+  }
+
+  // Eliminar de la cola los que se subieron exitosamente
+  if(sincronizados.length){
+    savePending(pending.filter(r=>!sincronizados.includes(r.id)));
+  }
+
+  // ── 2) Sincronizar updates ──
+  const remainingUpdates=[];
+  for(const upd of pendingUpdates){
+    try {
+      if(upd.type==='update'){
+        const r=upd.payload;
+        // Subir fotos de levantamiento nuevas si las hay
+        if(r.fotosLevantamiento && r.fotosLevantamiento.length){
+          const linksLev=[];
+          for(let i=0;i<r.fotosLevantamiento.length;i++){
+            const link=await subirFoto(r.fotosLevantamiento[i], `reporte_${r.id}_lev_edit${i+1}`);
+            if(link) linksLev.push(link);
+          }
+          r.linksFotosLevantamiento=linksLev;
+          r.fotosLevantamiento=[];
+        }
+        const res=await fetch(SHEETS_URL,{
+          method:'POST', mode:'cors',
+          headers:{'Content-Type':'text/plain'},
+          body:JSON.stringify({type:'update', id:r.id, data:{...r, fotos:[], fotosLevantamiento:[]}})
+        });
+        if(res.ok){
+          // Actualizar en memoria
+          const idx=allReportes.findIndex(x=>x.id===r.id);
+          if(idx>=0){ allReportes[idx]={...allReportes[idx],...r,synced:true}; }
+        } else {
+          remainingUpdates.push(upd);
+        }
+      } else if(upd.type==='personal_add'){
+        const res=await fetch(SHEETS_URL,{
+          method:'POST', mode:'cors',
+          headers:{'Content-Type':'text/plain'},
+          body:JSON.stringify({type:'personal', data:upd.payload})
+        });
+        if(!res.ok) remainingUpdates.push(upd);
+      }
+    } catch(err) {
+      console.error('Error en update:', err);
+      remainingUpdates.push(upd);
+    }
+  }
+  savePendingUpdates(remainingUpdates);
+
+  document.getElementById('syncBanner').classList.remove('show');
+  updateSyncUI();
+  renderReportes();
+  renderStats();
+  renderSeguimientos();
+
+  const totalSync=sincronizados.length+(pendingUpdates.length-remainingUpdates.length);
+  if(totalSync>0){
+    showToast(`✓ ${totalSync} cambio${totalSync>1?'s':''} sincronizado${totalSync>1?'s':''}`);
+  }
+}
+
+async function subirFoto(dataURL, nombre){
+  try{
+    const mime=dataURL.split(';')[0].split(':')[1];
+    const base64=dataURL.split(',')[1];
+    const ext=mime.split('/')[1];
+    const nombreArchivo=`${nombre}.${ext}`;
+    const res=await fetch(SHEETS_URL,{
+      method:'POST', mode:'cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({type:'foto', nombre:nombreArchivo, mime, data:base64})
+    });
+    if(res.ok){
+      const json=await res.json();
+      if(json.ok && json.url) return json.url;
+    }
+  }catch(e){console.error('❌ Error subiendo foto:', e);}
+  return null;
+}
+
+/* ───── CARGA DESDE SERVIDOR ───── */
+// silencioso=true cuando se llama al arrancar (no muestra toast de "ya sincronizado")
+async function cargarDelServidor(silencioso=false){
+  const btn=document.getElementById('btnCargarServidor');
+  const info=document.getElementById('serverSyncInfo');
+  if(!navigator.onLine){
+    if(!silencioso) showToast('Sin conexión a internet');
+    if(info) info.textContent='Sin conexión — mostrando '+getPending().length+' pendiente(s) local(es)';
+    return;
+  }
+  if(btn){ btn.disabled=true; btn.textContent='Cargando...'; }
+  if(info) info.textContent='Cargando del servidor...';
+  try{
+    const res=await fetch(SHEETS_URL+'?action=reportes');
+    if(!res.ok) throw new Error('Error HTTP '+res.status);
+    const json=await res.json();
+    if(!json.ok) throw new Error(json.error||'Error del servidor');
+
+    const remotos=json.reportes||[];
+
+    // Los IDs de pendientes locales para no pisarlos con la versión del server
+    const pendingIds=new Set(getPending().map(r=>String(r.id)));
+    // Cargar en memoria — excluir los que están en la cola local (tienen versión más nueva)
+    allReportes=remotos.filter(r=>!pendingIds.has(String(r.id)));
+    serverLoaded=true;
+
+    initFiltroStats();
+    renderReportes();
+    renderStats();
+    renderSeguimientos();
+
+    const total=getReportes().length;
+    const pendientes=getPending().length;
+    if(info) info.textContent=total+' reportes'+(pendientes?' ('+pendientes+' por sincronizar)':'');
+    if(!silencioso) showToast('✓ '+total+' reportes cargados');
+
+    // Aprovechar para sincronizar pendientes si los hay
+    if(getPending().length||getPendingUpdates().length) autoSync();
+  }catch(err){
+    if(info) info.textContent='Error al cargar del servidor';
+    if(!silencioso) showToast('Error: '+err.message);
+    console.error(err);
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='↓ Recargar'; }
+  }
+}
+
+function manualSync(){
+  if(!navigator.onLine){showToast('Sin conexión a internet');return;}
+  cargarPersonal();
+  cargarDelServidor(false);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
