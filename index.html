@@ -1136,9 +1136,22 @@ function escapeHtml(s){
 // Normaliza fotos: acepta array, string "url1 | url2", o vacío → siempre devuelve array limpio
 function toArray(val){
   if(!val) return [];
-  if(Array.isArray(val)) return val.filter(v=>v&&String(v).trim()&&!String(v).startsWith('data:')||String(v).startsWith('data:'));
+  if(Array.isArray(val)) return val.filter(v=>v&&String(v).trim());
   if(typeof val==='string') return val.split('|').map(s=>s.trim()).filter(Boolean);
   return [];
+}
+
+// Convierte cualquier formato de link de Drive a URL embebible para <img>
+// Todos los formatos se normalizan a: /file/d/ID/preview (renderiza en iframe/img sin bloqueo)
+function driveImgUrl(url){
+  if(!url) return '';
+  // extraer ID desde /file/d/ID/...
+  let m = url.match(/\/file\/d\/([\w-]+)/);
+  if(m) return 'https://drive.google.com/file/d/'+m[1]+'/preview';
+  // extraer ID desde uc?id=ID o open?id=ID
+  m = url.match(/[?&]id=([\w-]+)/);
+  if(m) return 'https://drive.google.com/file/d/'+m[1]+'/preview';
+  return url;
 }
 
 function openModal(id){
@@ -1180,8 +1193,8 @@ function openModal(id){
     <div class="detail-row"><span class="detail-label">Sincronización</span>
       <span class="detail-value ${r.synced?'status-synced':'status-pending'}">${r.synced?'✓ Sincronizado':'⏳ Pendiente'}</span>
     </div>
-    ${fotosHallazgo.length?`<div style="margin-top:14px;"><div class="section-title">Fotos del hallazgo (${fotosHallazgo.length})</div><div class="photos-modal-grid">${fotosHallazgo.map(f=>`<img src="${typeof f==='string'?f:''}" onerror="this.style.opacity=0.3">`).join('')}</div></div>`:''}
-    ${fotosLev.length?`<div style="margin-top:14px;"><div class="section-title">Fotos de cierre (${fotosLev.length})</div><div class="photos-modal-grid">${fotosLev.map(f=>`<img src="${typeof f==='string'?f:''}" onerror="this.style.opacity=0.3">`).join('')}</div></div>`:''}
+    ${fotosHallazgo.length?`<div style="margin-top:14px;"><div class="section-title">Fotos del hallazgo (${fotosHallazgo.length})</div><div class="photos-modal-grid">${fotosHallazgo.map(f=>`<div style="position:relative;width:100%;aspect-ratio:1;background:var(--surface2);border-radius:var(--radius-sm);overflow:hidden;"><iframe src="${driveImgUrl(typeof f==='string'?f:'')}" style="width:100%;height:100%;border:none;" allowfullscreen></iframe><a href="${typeof f==='string'?f:''}" target="_blank" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:3px 7px;border-radius:10px;text-decoration:none;">↗ Ver</a></div>`).join('')}</div></div>`:''}
+    ${fotosLev.length?`<div style="margin-top:14px;"><div class="section-title">Fotos de cierre (${fotosLev.length})</div><div class="photos-modal-grid">${fotosLev.map(f=>`<div style="position:relative;width:100%;aspect-ratio:1;background:var(--surface2);border-radius:var(--radius-sm);overflow:hidden;"><iframe src="${driveImgUrl(typeof f==='string'?f:'')}" style="width:100%;height:100%;border:none;" allowfullscreen></iframe><a href="${typeof f==='string'?f:''}" target="_blank" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:3px 7px;border-radius:10px;text-decoration:none;">↗ Ver</a></div>`).join('')}</div></div>`:''}
     <div class="modal-actions">
       <button class="btn-close-modal" onclick="closeModalBtn()">Cerrar</button>
       <button class="btn-edit" onclick="abrirEdicion('${r.id}')">Editar</button>
