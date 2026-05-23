@@ -345,7 +345,7 @@
     </div>
     <div class="form-row">
       <div>
-        <label class="form-sublabel">Área del observado <span class="form-required">*</span></label>
+        <label class="form-sublabel">Área del observado</label>
         <input type="text" id="areaReportado" placeholder="Se completa al seleccionar" readonly
                style="background:var(--surface3);color:var(--text2);">
       </div>
@@ -933,7 +933,6 @@ function guardarReporte(){
   if(!g('responsable'))    {showToast('⚠ Ingresa el responsable de la acción correctiva');return;}
   if(!g('ubicacion'))      {showToast('⚠ Selecciona el Área / Ubicación');return;}
   if(g('ubicacion')==='Otros' && !g('ubicacionOtros')){showToast('⚠ Especifica la ubicación');return;}
-  if(!g('areaReportado'))  {showToast('⚠ Selecciona el área del observado');return;}
   if(!g('fecha'))          {showToast('⚠ Ingresa la fecha');return;}
   if(!g('hora'))           {showToast('⚠ Ingresa la hora');return;}
   if(!g('dniReportador'))  {showToast('⚠ Ingresa tu DNI para identificarte');return;}
