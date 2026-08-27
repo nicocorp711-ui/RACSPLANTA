@@ -1823,7 +1823,7 @@ async function autoSync(){
       console.error('Error subiendo reporte:', err);
       document.getElementById('syncBanner').classList.remove('show');
       updateSyncUI();
-      showToast('Sin conexión, se reintentará luego');
+      showToast('⚠ Error al sincronizar: '+(err.message||'se reintentará luego'));
       // Guardar el estado parcial (fotos ya subidas quedan como links)
       savePending(pending.filter(x=>!sincronizados.includes(x.id)));
       return;
@@ -1837,6 +1837,7 @@ async function autoSync(){
 
   // ── 2) Sincronizar updates ──
   const remainingUpdates=[];
+  let lastUpdateError='';
   for(const upd of pendingUpdates){
     try {
       if(upd.type==='update'){
@@ -1879,6 +1880,7 @@ async function autoSync(){
       }
     } catch(err) {
       console.error('Error en update:', err);
+      lastUpdateError=err.message||'Error desconocido al sincronizar';
       remainingUpdates.push(upd);
     }
   }
@@ -1894,27 +1896,28 @@ async function autoSync(){
   if(totalSync>0){
     showToast(`✓ ${totalSync} cambio${totalSync>1?'s':''} sincronizado${totalSync>1?'s':''}`);
   } else if(remainingUpdates.length){
-    showToast('⚠ No se sincronizó el cierre. Verifica la foto e inténtalo nuevamente.');
+    showToast('⚠ '+(lastUpdateError||'No se sincronizó el cierre. Verifica la foto e inténtalo nuevamente.'));
   }
 }
 
 async function subirFoto(dataURL, nombre){
-  try{
-    const mime=dataURL.split(';')[0].split(':')[1];
-    const base64=dataURL.split(',')[1];
-    const ext=mime.split('/')[1];
-    const nombreArchivo=`${nombre}.${ext}`;
-    const res=await fetch(SHEETS_URL,{
-      method:'POST', mode:'cors',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({type:'foto', nombre:nombreArchivo, mime, data:base64})
-    });
-    if(res.ok){
-      const json=await res.json();
-      if(json.ok && json.url) return json.url;
-    }
-  }catch(e){console.error('❌ Error subiendo foto:', e);}
-  return null;
+  const mime=dataURL.split(';')[0].split(':')[1];
+  const base64=dataURL.split(',')[1];
+  if(!mime||!base64) throw new Error('La imagen no pudo prepararse para la subida');
+  const ext=mime.split('/')[1]||'img';
+  const nombreArchivo=`${nombre}.${ext}`;
+  const res=await fetch(SHEETS_URL,{
+    method:'POST', mode:'cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({type:'foto', nombre:nombreArchivo, mime, data:base64})
+  });
+  let json=null;
+  try{ json=await res.json(); }catch{}
+  if(!res.ok) throw new Error('Error HTTP '+res.status+' al subir la foto');
+  if(!json||!json.ok||!json.url){
+    throw new Error(json?.error||'Drive no devolvió el enlace de la foto');
+  }
+  return json.url;
 }
 
 /* ───── CARGA DESDE SERVIDOR ───── */
