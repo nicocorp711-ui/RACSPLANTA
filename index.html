@@ -1797,7 +1797,11 @@ async function autoSync(){
       const linksLev=[];
       for(let i=0;i<(r.fotosLevantamiento||[]).length;i++){
         const link=await subirFoto(r.fotosLevantamiento[i], `reporte_${r.id}_levantamiento${i+1}`);
-        if(link) linksLev.push(link);
+        if(!link) throw new Error('No se pudo subir la foto de cierre '+(i+1));
+        linksLev.push(link);
+      }
+      if(r.estado==='Cerrado' && !linksLev.length && !(r.linksFotosLevantamiento||[]).length){
+        throw new Error('El reporte cerrado no tiene una foto de cierre válida');
       }
       r.linksFotosLevantamiento=linksLev;
       r.fotosLevantamiento=[];
@@ -1842,10 +1846,14 @@ async function autoSync(){
           const linksLev=[];
           for(let i=0;i<r.fotosLevantamiento.length;i++){
             const link=await subirFoto(r.fotosLevantamiento[i], `reporte_${r.id}_lev_edit${i+1}`);
-            if(link) linksLev.push(link);
+            if(!link) throw new Error('No se pudo subir la foto de cierre '+(i+1));
+            linksLev.push(link);
           }
           r.linksFotosLevantamiento=linksLev;
           r.fotosLevantamiento=[];
+        }
+        if(r.estado==='Cerrado' && !(r.linksFotosLevantamiento||[]).length){
+          throw new Error('El reporte cerrado no tiene una foto de cierre válida');
         }
         const res=await fetch(SHEETS_URL,{
           method:'POST', mode:'cors',
@@ -1885,6 +1893,8 @@ async function autoSync(){
   const totalSync=sincronizados.length+(pendingUpdates.length-remainingUpdates.length);
   if(totalSync>0){
     showToast(`✓ ${totalSync} cambio${totalSync>1?'s':''} sincronizado${totalSync>1?'s':''}`);
+  } else if(remainingUpdates.length){
+    showToast('⚠ No se sincronizó el cierre. Verifica la foto e inténtalo nuevamente.');
   }
 }
 
