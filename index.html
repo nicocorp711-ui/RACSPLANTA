@@ -1195,7 +1195,7 @@ function openModal(id){
     ${fotosHallazgo.length?`<div style="margin-top:14px;"><div class="section-title">Fotos del hallazgo (${fotosHallazgo.length})</div><div class="photos-modal-grid">${fotosHallazgo.map(f=>`<div style="position:relative;width:100%;aspect-ratio:1;background:var(--surface2);border-radius:var(--radius-sm);overflow:hidden;"><iframe src="${driveImgUrl(typeof f==='string'?f:'')}" style="width:100%;height:100%;border:none;" allowfullscreen></iframe><a href="${typeof f==='string'?f:''}" target="_blank" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:3px 7px;border-radius:10px;text-decoration:none;">↗ Ver</a></div>`).join('')}</div></div>`:''}
     ${fotosLev.length?`<div style="margin-top:14px;"><div class="section-title">Fotos de cierre (${fotosLev.length})</div><div class="photos-modal-grid">${fotosLev.map(f=>`<div style="position:relative;width:100%;aspect-ratio:1;background:var(--surface2);border-radius:var(--radius-sm);overflow:hidden;"><iframe src="${driveImgUrl(typeof f==='string'?f:'')}" style="width:100%;height:100%;border:none;" allowfullscreen></iframe><a href="${typeof f==='string'?f:''}" target="_blank" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:3px 7px;border-radius:10px;text-decoration:none;">↗ Ver</a></div>`).join('')}</div></div>`:''}
     <div class="modal-actions">
-      <button class="btn-close-modal" onclick="closeModalBtn()">Cerrar</button>
+      <button class="btn-close-modal" onclick="closeModalBtn()">Cerrar ventana</button>
       <button class="btn-edit" onclick="abrirEdicion('${r.id}')">Editar</button>
       <button class="btn-delete" onclick="deleteReporte('${r.id}')">Eliminar</button>
     </div>`;
@@ -1337,15 +1337,20 @@ function guardarEdicion(){
     savePending(pendingQueue);
     // No agregamos a pendingUpdates porque aún no se ha subido al server
   } else {
-    // Ya estaba en el server: agregar a cola de updates
-    const pendingUpdates=getPendingUpdates();
+    // Ya estaba en el server: conservar solo la actualización más reciente
+    // para impedir que un cambio antiguo vuelva a abrir un reporte cerrado.
+    const pendingUpdates=getPendingUpdates().filter(upd=>
+      !(upd.type==='update' && String(upd.id)===String(r.id))
+    );
     pendingUpdates.push({type:'update', id:r.id, payload:r});
     savePendingUpdates(pendingUpdates);
   }
 
   closeEditModalBtn();
   renderReportes(); renderStats(); renderSeguimientos();
-  showToast('✓ Reporte actualizado'+(navigator.onLine?'':' (se sincronizará online)'));
+  showToast(navigator.onLine
+    ? 'Reporte guardado; verificando sincronización...'
+    : 'Reporte guardado (se sincronizará online)');
   if(navigator.onLine) autoSync();
 }
 
@@ -1803,6 +1808,8 @@ async function autoSync(){
         body:JSON.stringify({type:'reporte',data:[r]})
       });
       if(!res.ok) throw new Error('HTTP '+res.status);
+      const result=await res.json();
+      if(!result.ok) throw new Error(result.error||'El servidor rechazó el reporte');
 
       // Subido OK: mover a allReportes y sacar de la cola
       r.synced=true;
@@ -1845,11 +1852,13 @@ async function autoSync(){
           headers:{'Content-Type':'text/plain'},
           body:JSON.stringify({type:'update', id:r.id, data:{...r, fotos:[], fotosLevantamiento:[]}})
         });
-        if(res.ok){
+        const result=res.ok?await res.json():null;
+        if(res.ok && result && result.ok){
           // Actualizar en memoria
           const idx=allReportes.findIndex(x=>x.id===r.id);
           if(idx>=0){ allReportes[idx]={...allReportes[idx],...r,synced:true}; }
         } else {
+          console.error('Update rechazado:', result?.error||('HTTP '+res.status));
           remainingUpdates.push(upd);
         }
       } else if(upd.type==='personal_add'){
@@ -1959,3 +1968,4 @@ function showToast(msg){
 </script>
 </body>
 </html>
+
