@@ -177,7 +177,7 @@
 
 <header class="app-header">
   <div class="app-title">Planta de <span>Beneficio</span></div>
-  <button class="sync-badge" onclick="manualSync()">
+  <button class="sync-badge" onclick="showPendingDetails()" title="Ver sincronizaciones pendientes">
     <span class="sync-dot" id="syncDot"></span>
     <span id="syncLabel">offline</span>
   </button>
@@ -542,6 +542,14 @@
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div id="editModalContent"></div>
+  </div>
+</div>
+
+<!-- MODAL SINCRONIZACIONES PENDIENTES -->
+<div class="modal-overlay" id="pendingModalOverlay" onclick="closePendingDetails(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="pendingModalContent"></div>
   </div>
 </div>
 
@@ -1843,6 +1851,7 @@ async function autoSync(){
       sincronizados.push(r.id);
     } catch(err) {
       console.error('Error subiendo reporte:', err);
+      r.syncError=err.message||'Error desconocido al sincronizar';
       document.getElementById('syncBanner').classList.remove('show');
       updateSyncUI();
       showToast('⚠ Error al sincronizar: '+(err.message||'se reintentará luego'));
@@ -1889,7 +1898,10 @@ async function autoSync(){
           const idx=allReportes.findIndex(x=>x.id===r.id);
           if(idx>=0){ allReportes[idx]={...allReportes[idx],...r,synced:true}; }
         } else {
-          console.error('Update rechazado:', result?.error||('HTTP '+res.status));
+          const rejectedError=result?.error||('HTTP '+res.status);
+          console.error('Update rechazado:', rejectedError);
+          upd.syncError=rejectedError;
+          lastUpdateError=rejectedError;
           remainingUpdates.push(upd);
         }
       } else if(upd.type==='personal_add'){
@@ -1903,6 +1915,7 @@ async function autoSync(){
     } catch(err) {
       console.error('Error en update:', err);
       lastUpdateError=err.message||'Error desconocido al sincronizar';
+      upd.syncError=lastUpdateError;
       remainingUpdates.push(upd);
     }
   }
@@ -1989,6 +2002,50 @@ async function cargarDelServidor(silencioso=false){
   }
 }
 
+function showPendingDetails(){
+  const nuevos=getPending().map(r=>({kind:'Reporte nuevo',report:r,error:r.syncError}));
+  const cambios=getPendingUpdates().map(upd=>({
+    kind:upd.type==='personal_add'?'Registro de personal':(upd.payload?.responsable!==undefined?'Actualización / derivación':'Actualización de reporte'),
+    report:upd.payload||{}, error:upd.syncError
+  }));
+  const items=[...nuevos,...cambios];
+  if(!items.length){
+    showToast(navigator.onLine?'✓ Todo está sincronizado':'Sin conexión a internet');
+    return;
+  }
+  document.getElementById('pendingModalContent').innerHTML=`
+    <div class="modal-title">Sincronizaciones pendientes (${items.length})</div>
+    <p style="font-size:13px;color:var(--text2);margin:-8px 0 14px;">Estos cambios siguen guardados en este navegador y se reintentarán sin perderse.</p>
+    ${items.map((item,i)=>{
+      const r=item.report||{};
+      return `<div style="padding:12px;margin-bottom:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);">
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;">
+          <strong style="font-size:13px;">${i+1}. ${escapeHtml(item.kind)}</strong>
+          <span style="font:11px var(--mono);color:var(--warning);">Pendiente</span>
+        </div>
+        <div class="detail-row"><span class="detail-label">ID</span><span class="detail-value">${escapeHtml(String(r.id||'No disponible'))}</span></div>
+        <div class="detail-row"><span class="detail-label">Descripción</span><span class="detail-value">${escapeHtml(r.descripcion||r.nombre||'Sin descripción')}</span></div>
+        <div class="detail-row"><span class="detail-label">Área responsable</span><span class="detail-value">${escapeHtml(r.responsable||'No indicada')}</span></div>
+        <div class="detail-row"><span class="detail-label">Estado</span><span class="detail-value">${escapeHtml(r.estado||'No indicado')}</span></div>
+        <div class="detail-row"><span class="detail-label">Último error</span><span class="detail-value" style="color:var(--danger);">${escapeHtml(item.error||'Aún no hay detalle. Pulsa Reintentar para obtenerlo.')}</span></div>
+      </div>`;
+    }).join('')}
+    <div class="modal-actions">
+      <button class="btn-close-modal" onclick="closePendingDetailsBtn()">Cerrar</button>
+      <button class="btn-edit" onclick="retryPendingSync()">Reintentar sincronización</button>
+    </div>`;
+  document.getElementById('pendingModalOverlay').classList.add('open');
+}
+
+function closePendingDetails(e){if(e.target===document.getElementById('pendingModalOverlay')) closePendingDetailsBtn();}
+function closePendingDetailsBtn(){document.getElementById('pendingModalOverlay').classList.remove('open');}
+async function retryPendingSync(){
+  if(!navigator.onLine){showToast('Sin conexión a internet');return;}
+  closePendingDetailsBtn();
+  await autoSync();
+  if(getPending().length+getPendingUpdates().length) showPendingDetails();
+}
+
 function manualSync(){
   if(!navigator.onLine){showToast('Sin conexión a internet');return;}
   cargarPersonal();
@@ -2003,4 +2060,3 @@ function showToast(msg){
 </script>
 </body>
 </html>
-
