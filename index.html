@@ -550,6 +550,7 @@
 <script>
 const SHEETS_URL='https://script.google.com/macros/s/AKfycbz8s-WGNHNEPPNEuL9sC7sCtoN0OrwuY6h94Rm1bFY2XFHClb2QZgIxYJoWatoo84GK/exec';
 const PENDING_KEY='seguridad_pending', PERSONAL_KEY='seguridad_personal', PENDING_UPDATES_KEY='seguridad_pending_updates';
+const ADMIN_DERIVACIONES=new URLSearchParams(window.location.search).get('admin')==='derivaciones';
 
 // ── FUENTE DE VERDAD: siempre el servidor ──
 // localStorage solo guarda:
@@ -1223,6 +1224,8 @@ function abrirEdicion(id){
   currentEditId=id;
   editPhotoLevDataURLs=[];
   const estadoActual=r.estado||'Abierto';
+  const responsablesDisponibles=[...new Set(getReportes().map(x=>String(x.responsable||'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'es'));
   closeModalBtn();
 
   document.getElementById('editModalContent').innerHTML=`
@@ -1233,6 +1236,16 @@ function abrirEdicion(id){
       <div><strong>Lugar:</strong> ${escapeHtml(r.ubicacion||'—')}</div>
       <div><strong>Descripción:</strong> ${escapeHtml((r.descripcion||'').slice(0,100))}${(r.descripcion||'').length>100?'…':''}</div>
     </div>
+
+    ${ADMIN_DERIVACIONES?`
+    <div class="form-section">
+      <label class="form-label">Derivar al área responsable</label>
+      <input id="editResponsable" list="editResponsablesList" value="${escapeHtml(r.responsable||'')}" placeholder="Selecciona o escribe el área responsable">
+      <datalist id="editResponsablesList">
+        ${responsablesDisponibles.map(nombre=>`<option value="${escapeHtml(nombre)}"></option>`).join('')}
+      </datalist>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;">El reporte se moverá al grupo seleccionado en Seguimientos.</div>
+    </div>`:''}
 
     <div class="form-section">
       <label class="form-label">Cambiar estado</label>
@@ -1292,6 +1305,15 @@ function guardarEdicion(){
 
   // Determinar el estado seleccionado (puede no haber cambiado)
   const nuevoEstado=selectedEditEstado||r.estado||'Abierto';
+
+  if(ADMIN_DERIVACIONES){
+    const nuevoResponsable=(document.getElementById('editResponsable')?.value||'').trim();
+    if(!nuevoResponsable){
+      showToast('⚠ Selecciona el área responsable');
+      return;
+    }
+    r.responsable=nuevoResponsable;
+  }
 
   // Si va a cerrado, validar foto y medidas
   if(nuevoEstado==='Cerrado'){
