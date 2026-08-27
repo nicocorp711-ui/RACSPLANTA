@@ -1890,7 +1890,11 @@ async function autoSync(){
         const res=await fetch(SHEETS_URL,{
           method:'POST', mode:'cors',
           headers:{'Content-Type':'text/plain'},
-          body:JSON.stringify({type:'update', id:r.id, data:{...r, fotos:[], fotosLevantamiento:[]}})
+          body:JSON.stringify({type:'update', id:r.id, data:{
+            ...r,
+            linksFotosLevantamiento:toArray(r.linksFotosLevantamiento),
+            fotos:[], fotosLevantamiento:[]
+          }})
         });
         const result=res.ok?await res.json():null;
         if(res.ok && result && result.ok){
